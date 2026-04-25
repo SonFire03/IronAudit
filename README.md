@@ -39,6 +39,8 @@ source .venv/bin/activate
 pip install -e .[dev]
 ironaudit scan
 ```
+<img width="1267" height="692" alt="image" src="https://github.com/user-attachments/assets/9c42c07a-68b5-4c4b-ad23-631203187d02" />
+
 
 ## Validated Commands
 

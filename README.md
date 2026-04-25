@@ -134,7 +134,26 @@ Default deduction examples:
 pytest
 ruff check .
 mypy ironaudit
+python scripts/privacy_guard.py
 ```
+
+## Privacy Guard
+
+The project ships with a CI privacy guard (`.github/workflows/privacy-guard.yml`) that scans tracked files for potential secrets/PII patterns:
+
+- private keys
+- token-like values
+- API key patterns
+- email addresses
+- local absolute home paths
+
+Local run:
+
+```bash
+python scripts/privacy_guard.py
+```
+
+If a true positive must be kept, add an explicit exact-value exception to `.privacy-allowlist` with a justification comment.
 
 ## Disclaimer
 

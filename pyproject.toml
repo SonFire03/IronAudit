@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ironaudit"
-version = "0.1.0"
+version = "0.2.0"
 description = "Linux security posture auditor with scoring, findings, and remediation guidance."
 readme = "README.md"
 requires-python = ">=3.11"

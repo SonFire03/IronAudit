@@ -17,6 +17,7 @@ from ironaudit.engine import available_checks, run_scan
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.json_exporter import to_json
 from ironaudit.exporters.markdown_exporter import to_markdown
+from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.history import (
     latest_two_reports,
     list_snapshots,
@@ -24,6 +25,7 @@ from ironaudit.history import (
     save_snapshot,
 )
 from ironaudit.models import ScanReport
+from ironaudit.profiles import available_profiles
 from ironaudit.webapp import WebConfig, serve_web
 
 app = typer.Typer(help="IronAudit - Linux security posture auditor")
@@ -39,7 +41,12 @@ def _split_csv(values: str | None) -> list[str] | None:
 
 
 def _render_terminal(
-    report_json: bool, report_md: bool, report_html: bool, output: Path | None, report: ScanReport
+    report_json: bool,
+    report_md: bool,
+    report_html: bool,
+    report_sarif: bool,
+    output: Path | None,
+    report: ScanReport,
 ) -> None:
     if report_json:
         payload = to_json(report)
@@ -47,10 +54,12 @@ def _render_terminal(
         payload = to_markdown(report)
     elif report_html:
         payload = to_html(report)
+    elif report_sarif:
+        payload = to_sarif(report)
     else:
         payload = ""
 
-    if report_json or report_md or report_html:
+    if report_json or report_md or report_html or report_sarif:
         if output:
             output.write_text(payload, encoding="utf-8")
             console.print(f"Report written to {output}")
@@ -87,23 +96,32 @@ def scan(
     json_output: Annotated[bool, typer.Option("--json", help="Print/export report as JSON")] = False,
     md_output: Annotated[bool, typer.Option("--md", help="Print/export report as Markdown")] = False,
     html_output: Annotated[bool, typer.Option("--html", help="Print/export report as HTML")] = False,
+    sarif_output: Annotated[bool, typer.Option("--sarif", help="Print/export report as SARIF")] = False,
     output: Annotated[Path | None, typer.Option("--output", help="Output file path")] = None,
     save_history: Annotated[
         bool, typer.Option("--save-history/--no-save-history", help="Store snapshot in local history")
     ] = False,
     label: Annotated[str | None, typer.Option("--label", help="Optional snapshot label")] = None,
+    profile: Annotated[
+        str, typer.Option("--profile", help="Scan profile: workstation, server, minimal")
+    ] = "workstation",
     checks: Annotated[str | None, typer.Option("--checks", help="Comma-separated checks to include")] = None,
     exclude: Annotated[str | None, typer.Option("--exclude", help="Comma-separated checks to exclude")] = None,
 ) -> None:
     """Run local Linux hardening audit checks."""
-    output_modes = [json_output, md_output, html_output]
+    output_modes = [json_output, md_output, html_output, sarif_output]
     if sum(1 for mode in output_modes if mode) > 1:
-        raise typer.BadParameter("Use only one output mode among --json, --md, --html.")
+        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --sarif.")
+
+    if profile not in available_profiles():
+        raise typer.BadParameter(
+            f"Unknown profile '{profile}'. Available profiles: {', '.join(available_profiles())}"
+        )
 
     include_checks = _split_csv(checks)
     exclude_checks = _split_csv(exclude)
 
-    report = run_scan(include=include_checks, exclude=exclude_checks)
+    report = run_scan(include=include_checks, exclude=exclude_checks, profile=profile)
 
     if save_history:
         path = save_snapshot(report, label=label)
@@ -113,6 +131,7 @@ def scan(
         report_json=json_output,
         report_md=md_output,
         report_html=html_output,
+        report_sarif=sarif_output,
         output=output,
         report=report,
     )
@@ -127,6 +146,7 @@ def info() -> None:
     table.add_row("Version", __version__)
     table.add_row("Tagline", "Linux security posture auditor with scoring, findings, and remediation guidance.")
     table.add_row("Checks", ", ".join(available_checks()))
+    table.add_row("Profiles", ", ".join(available_profiles()))
     console.print(table)
 
 
@@ -208,12 +228,19 @@ def compare(
 
 @history_app.command("save")
 def history_save(
+    profile: Annotated[
+        str, typer.Option("--profile", help="Scan profile: workstation, server, minimal")
+    ] = "workstation",
     checks: Annotated[str | None, typer.Option("--checks", help="Comma-separated checks to include")] = None,
     exclude: Annotated[str | None, typer.Option("--exclude", help="Comma-separated checks to exclude")] = None,
     label: Annotated[str | None, typer.Option("--label", help="Optional snapshot label")] = None,
 ) -> None:
     """Run scan and save a new history snapshot."""
-    report = run_scan(include=_split_csv(checks), exclude=_split_csv(exclude))
+    if profile not in available_profiles():
+        raise typer.BadParameter(
+            f"Unknown profile '{profile}'. Available profiles: {', '.join(available_profiles())}"
+        )
+    report = run_scan(include=_split_csv(checks), exclude=_split_csv(exclude), profile=profile)
     path = save_snapshot(report, label=label)
     console.print(f"Snapshot saved: {path}")
     console.print(f"Score: {report.score}/100 ({report.rating})")
@@ -245,17 +272,19 @@ def history_show(
     json_output: Annotated[bool, typer.Option("--json", help="Print snapshot as JSON")] = False,
     md_output: Annotated[bool, typer.Option("--md", help="Print snapshot as Markdown")] = False,
     html_output: Annotated[bool, typer.Option("--html", help="Print snapshot as HTML")] = False,
+    sarif_output: Annotated[bool, typer.Option("--sarif", help="Print snapshot as SARIF")] = False,
 ) -> None:
     """Show a stored history snapshot."""
-    output_modes = [json_output, md_output, html_output]
+    output_modes = [json_output, md_output, html_output, sarif_output]
     if sum(1 for mode in output_modes if mode) > 1:
-        raise typer.BadParameter("Use only one output mode among --json, --md, --html.")
+        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --sarif.")
 
     report = load_snapshot_by_id(snapshot_id)
     _render_terminal(
         report_json=json_output,
         report_md=md_output,
         report_html=html_output,
+        report_sarif=sarif_output,
         output=None,
         report=report,
     )

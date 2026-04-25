@@ -50,6 +50,7 @@ def test_report_from_dict_roundtrip() -> None:
             "hostname": "host1",
             "distro": "Ubuntu",
             "duration_seconds": 1.234,
+            "scan_profile": "server",
             "scanned_at": "2026-01-01T00:00:00+00:00",
         },
         "selected_checks": ["ssh"],
@@ -71,5 +72,6 @@ def test_report_from_dict_roundtrip() -> None:
 
     report = ScanReport.from_dict(raw)
     assert report.metadata.duration_seconds == 1.234
+    assert report.metadata.scan_profile == "server"
     assert report.findings[0].check_id == "ssh"
     assert report.score == 100

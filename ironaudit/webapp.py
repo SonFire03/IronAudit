@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 from ironaudit.engine import available_checks, run_scan
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.markdown_exporter import to_markdown
+from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.models import ScanReport
 
 
@@ -46,6 +47,7 @@ def render_home(report: ScanReport | None, include: str = "", exclude: str = "")
     api_link = f"/api/scan?{query}" if query else "/api/scan"
     md_link = f"/report.md?{query}" if query else "/report.md"
     html_link = f"/report.html?{query}" if query else "/report.html"
+    sarif_link = f"/report.sarif?{query}" if query else "/report.sarif"
 
     return f"""<!doctype html>
 <html lang='en'>
@@ -388,6 +390,7 @@ def render_home(report: ScanReport | None, include: str = "", exclude: str = "")
         <a class='resource-link' href='{html.escape(api_link)}'>JSON API</a>
         <a class='resource-link' href='{html.escape(md_link)}'>Markdown Report</a>
         <a class='resource-link' href='{html.escape(html_link)}'>HTML Report</a>
+        <a class='resource-link' href='{html.escape(sarif_link)}'>SARIF Report</a>
       </div>
     </section>
 
@@ -662,6 +665,9 @@ class IronAuditHandler(BaseHTTPRequestHandler):
         if parsed.path == "/report.html":
             self._handle_html_report(parsed.query)
             return
+        if parsed.path == "/report.sarif":
+            self._handle_sarif_report(parsed.query)
+            return
 
         self.send_error(HTTPStatus.NOT_FOUND, "Route not found")
 
@@ -722,6 +728,18 @@ class IronAuditHandler(BaseHTTPRequestHandler):
         report = run_scan(include=parse_csv(include_raw), exclude=parse_csv(exclude_raw))
         payload = to_html(report)
         self._html_response(payload)
+
+    def _handle_sarif_report(self, query: str) -> None:
+        params = parse_qs(query)
+        include_raw = params.get("checks", [""])[0]
+        exclude_raw = params.get("exclude", [""])[0]
+        report = run_scan(include=parse_csv(include_raw), exclude=parse_csv(exclude_raw))
+        payload = to_sarif(report)
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/sarif+json; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload.encode("utf-8"))))
+        self.end_headers()
+        self.wfile.write(payload.encode("utf-8"))
 
     def _html_response(self, content: str) -> None:
         payload = content.encode("utf-8")

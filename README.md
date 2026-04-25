@@ -26,10 +26,11 @@ IronAudit is a defensive, local Linux hardening auditor. It runs read-only check
 - Linux checks: SSH, firewall, services exposure, users/sudo, permissions, updates, auth
 - Findings model: severity, status, category, evidence, remediation, points
 - Score/rating model: `0..100` with posture bands
-- Outputs: terminal, JSON, Markdown, HTML
+- Outputs: terminal, JSON, Markdown, HTML, SARIF
 - Local web dashboard
 - JSON report comparison (`baseline` vs `current`)
 - Snapshot history (`save/list/show/trend/compare-latest`)
+- Profiles: `workstation`, `server`, `minimal`
 
 ## Quickstart
 
@@ -64,6 +65,8 @@ Current local status in this repo:
 ironaudit scan --json --output report.json
 ironaudit scan --md --output report.md
 ironaudit scan --html --output report.html
+ironaudit scan --sarif --output report.sarif
+ironaudit scan --profile server
 
 # Narrow scope
 ironaudit scan --checks ssh,firewall,users
@@ -82,6 +85,7 @@ ironaudit web
   - [Web Dashboard](docs/web.md)
   - [History & Trend](docs/history.md)
   - [Report Compare](docs/compare.md)
+  - [Profiles](docs/profiles.md)
 - Documentation francaise: [README.fr.md](docs/README.fr.md)
 - Contribution and governance:
   - [Contributing](CONTRIBUTING.md)

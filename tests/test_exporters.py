@@ -1,6 +1,7 @@
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.json_exporter import to_json
 from ironaudit.exporters.markdown_exporter import to_markdown
+from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.models import Finding, ScanMetadata, ScanReport
 
 
@@ -43,3 +44,10 @@ def test_html_export_contains_key_content() -> None:
     assert "<!doctype html>" in payload.lower()
     assert "IronAudit Report" in payload
     assert "SSH password authentication enabled" in payload
+
+
+def test_sarif_export_contains_structure() -> None:
+    payload = to_sarif(_sample_report())
+    assert '"version": "2.1.0"' in payload
+    assert '"runs"' in payload
+    assert '"ruleId"' in payload

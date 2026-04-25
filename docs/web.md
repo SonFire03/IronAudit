@@ -20,6 +20,7 @@ ironaudit web --host 0.0.0.0 --port 8080 --no-open-browser
 - `/api/scan` JSON scan endpoint
 - `/report.md` Markdown export endpoint
 - `/report.html` HTML export endpoint
+- `/report.sarif` SARIF export endpoint
 
 ## Notes
 

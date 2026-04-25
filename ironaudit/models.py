@@ -47,6 +47,7 @@ class ScanMetadata:
     hostname: str
     distro: str
     duration_seconds: float | None = None
+    scan_profile: str | None = None
     scanned_at: str = field(
         default_factory=lambda: datetime.now(UTC).isoformat(timespec="seconds")
     )
@@ -62,6 +63,7 @@ class ScanMetadata:
             hostname=str(data.get("hostname", "unknown")),
             distro=str(data.get("distro", "Linux")),
             duration_seconds=duration_value,
+            scan_profile=str(data["scan_profile"]) if "scan_profile" in data and data["scan_profile"] is not None else None,
             scanned_at=str(data.get("scanned_at", datetime.now(UTC).isoformat(timespec="seconds"))),
         )
 

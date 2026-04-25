@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-04-25
+
+- Added scan profiles with weighted scoring (`workstation`, `server`, `minimal`)
+- Added SARIF export support (`ironaudit scan --sarif` and history snapshot SARIF output)
+- Added SARIF web endpoint (`/report.sarif`) and dashboard link
+- Added profile metadata in reports (`scan_profile`)
+- Added profile-aware scanning in history save workflow
+- Extended test coverage for profiles and SARIF exporter
+
 ## 0.1.0 - 2026-04-25
 
 - Initial MVP release

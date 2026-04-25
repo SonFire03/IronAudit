@@ -10,6 +10,12 @@ ironaudit scan --save-history --label weekly-audit
 ironaudit history save --label weekly-audit
 ```
 
+Profile-aware save:
+
+```bash
+ironaudit history save --profile server --label baseline
+```
+
 ## List and inspect
 
 ```bash
@@ -18,6 +24,7 @@ ironaudit history show <snapshot_id>
 ironaudit history show <snapshot_id> --json
 ironaudit history show <snapshot_id> --md
 ironaudit history show <snapshot_id> --html
+ironaudit history show <snapshot_id> --sarif
 ```
 
 ## Trend and latest diff

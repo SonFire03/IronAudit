@@ -34,6 +34,7 @@ def test_render_home_no_report() -> None:
     assert "No scan executed yet." in html
     assert "IronAudit Security Console" in html
     assert "HTML Report" in html
+    assert "SARIF Report" in html
 
 
 def test_render_home_with_report() -> None:

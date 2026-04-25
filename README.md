@@ -12,84 +12,36 @@ Linux security posture auditor with scoring, findings, and remediation guidance.
 [![Privacy Guard](https://img.shields.io/github/actions/workflow/status/SonFire03/IronAudit/privacy-guard.yml?branch=main&label=privacy%20guard)](https://github.com/SonFire03/IronAudit/actions/workflows/privacy-guard.yml)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
----
+IronAudit is a defensive, local Linux hardening auditor. It runs read-only checks, produces actionable findings, computes a score, and exports reports for operations and security workflows.
 
-## ENGLISH
+## Why IronAudit
 
-### Overview
-IronAudit is a defensive Linux hardening audit tool for local hosts. It runs non-destructive checks, produces structured findings with remediation guidance, computes a security score, and supports multiple report formats.
+- Fast baseline for Linux host security posture
+- Structured findings with remediation guidance
+- Consistent scoring for tracking progress over time
+- Defensive-only behavior (no exploit or post-exploitation logic)
 
-### Key Features
-- Local Linux hardening checks
-- Structured findings (`check_id`, severity, status, category, evidence, remediation, points)
-- Score from 0 to 100 with rating bands
+## Core Features
+
+- Linux checks: SSH, firewall, services exposure, users/sudo, permissions, updates, auth
+- Findings model: severity, status, category, evidence, remediation, points
+- Score/rating model: `0..100` with posture bands
 - Outputs: terminal, JSON, Markdown, HTML
-- Web dashboard
-- Baseline vs current report comparison
-- History snapshots and trend tracking
+- Local web dashboard
+- JSON report comparison (`baseline` vs `current`)
+- Snapshot history (`save/list/show/trend/compare-latest`)
 
-### Defensive Scope
-IronAudit is defensive-only. It does not perform exploitation, aggressive network scanning, or post-exploitation behavior.
+## Quickstart
 
-### Quickstart
 ```bash
-cd IronAudit
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
-```
-
-### CLI
-```bash
-ironaudit info
-ironaudit version
 ironaudit scan
-ironaudit scan --json --output report.json
-ironaudit scan --md --output report.md
-ironaudit scan --html --output report.html
-ironaudit scan --checks ssh,firewall,users
-ironaudit scan --exclude updates
-ironaudit scan --save-history --label baseline
 ```
 
-### Web UI
-```bash
-ironaudit web
-```
-Routes:
-- `/`
-- `/api/scan`
-- `/report.md`
-- `/report.html`
+## Validated Commands
 
-### Compare Reports
-```bash
-ironaudit compare baseline.json current.json
-ironaudit compare baseline.json current.json --json --output diff.json
-```
-
-### History
-```bash
-ironaudit history save --label weekly-audit
-ironaudit history list
-ironaudit history show <snapshot_id>
-ironaudit history trend
-ironaudit history compare-latest
-```
-Default path: `.ironaudit-history/` (override with `IRONAUDIT_HISTORY_DIR`).
-
-### Scoring Model
-- Start score: `100`
-- `fail` and `warn` findings deduct points
-- Final score is clamped to `0..100`
-
-Rating bands:
-- `90-100`: Hardened
-- `70-89`: Acceptable
-- `50-69`: Weak
-- `0-49`: Critical
-
-### Quality and Security
 ```bash
 pytest
 ruff check .
@@ -97,106 +49,53 @@ mypy ironaudit
 python scripts/privacy_guard.py
 ```
 
-### Known Limits
-- Some checks depend on local system commands (`ss`, `apt`, `systemctl`, etc.)
-- Update check is currently Debian/Ubuntu focused
-- Results may vary with privileges and containerized environments
+Current local status in this repo:
+- tests: pass
+- lint: pass
+- type-check: pass
+- privacy guard: pass
 
-### Disclaimer
-IronAudit is for defensive auditing and educational use. It is read-only and does not auto-remediate.
+## Common Workflows
 
----
-
-## FRANCAIS
-
-### Presentation
-IronAudit est un outil defensif d'audit de durcissement Linux pour machine locale. Il execute des controles non destructifs, produit des findings structures avec remediation, calcule un score de securite, et supporte plusieurs formats de rapport.
-
-### Fonctionnalites principales
-- Checks de hardening Linux en local
-- Findings structures (`check_id`, severite, statut, categorie, preuve, remediation, points)
-- Score global de 0 a 100 avec niveau
-- Sorties: terminal, JSON, Markdown, HTML
-- Dashboard web
-- Comparaison de rapports (baseline vs courant)
-- Historique de snapshots et suivi de tendance
-
-### Perimetre defensif
-IronAudit est uniquement defensif. Il ne fait pas d'exploitation, pas de scan reseau agressif, pas de post-exploitation.
-
-### Demarrage rapide
 ```bash
-cd IronAudit
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-```
-
-### Commandes CLI
-```bash
-ironaudit info
-ironaudit version
-ironaudit scan
+# Export reports
 ironaudit scan --json --output report.json
 ironaudit scan --md --output report.md
 ironaudit scan --html --output report.html
+
+# Narrow scope
 ironaudit scan --checks ssh,firewall,users
 ironaudit scan --exclude updates
-ironaudit scan --save-history --label baseline
-```
 
-### Interface Web
-```bash
+# Compare two JSON reports
+ironaudit compare baseline.json current.json
+
+# Use web dashboard
 ironaudit web
 ```
-Routes:
-- `/`
-- `/api/scan`
-- `/report.md`
-- `/report.html`
 
-### Comparer deux rapports
-```bash
-ironaudit compare baseline.json current.json
-ironaudit compare baseline.json current.json --json --output diff.json
-```
+## Documentation
 
-### Historique
-```bash
-ironaudit history save --label hebdo
-ironaudit history list
-ironaudit history show <snapshot_id>
-ironaudit history trend
-ironaudit history compare-latest
-```
-Chemin par defaut: `.ironaudit-history/` (surcharge avec `IRONAUDIT_HISTORY_DIR`).
+- English docs (feature details):
+  - [Web Dashboard](docs/web.md)
+  - [History & Trend](docs/history.md)
+  - [Report Compare](docs/compare.md)
+- Documentation francaise: [README.fr.md](docs/README.fr.md)
+- Contribution and governance:
+  - [Contributing](CONTRIBUTING.md)
+  - [Security Policy](SECURITY.md)
+  - [Code of Conduct](CODE_OF_CONDUCT.md)
 
-### Modele de scoring
-- Score initial: `100`
-- Les findings `fail` et `warn` retirent des points
-- Score final borne entre `0` et `100`
+## Current Limits
 
-Niveaux:
-- `90-100`: Hardened
-- `70-89`: Acceptable
-- `50-69`: Weak
-- `0-49`: Critical
+- Some checks require local commands (`ss`, `apt`, `systemctl`, etc.)
+- Update enumeration is currently Debian/Ubuntu focused
+- Results can vary with privileges and containerized environments
 
-### Qualite et securite
-```bash
-pytest
-ruff check .
-mypy ironaudit
-python scripts/privacy_guard.py
-```
+## Defensive Disclaimer
 
-### Limites connues
-- Certains checks dependent de commandes locales (`ss`, `apt`, `systemctl`, etc.)
-- Le check updates est actuellement centre Debian/Ubuntu
-- Les resultats peuvent varier selon privileges et environnements conteneurises
-
-### Avertissement
-IronAudit est fourni pour audit defensif et usage educatif. Outil en lecture seule, sans remediation automatique.
+IronAudit is provided for defensive auditing and educational use. It performs read-only checks and does not auto-remediate.
 
 ## License
+
 MIT

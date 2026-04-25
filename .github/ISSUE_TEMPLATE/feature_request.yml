@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement for IronAudit
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should be added or changed?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Defensive scope impact
+      description: Confirm this stays defensive-only and non-destructive
+    validations:
+      required: true

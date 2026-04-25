@@ -2,6 +2,16 @@
 
 Linux security posture auditor with scoring, findings, and remediation guidance.
 
+[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Typer](https://img.shields.io/badge/CLI-Typer-009688)](https://typer.tiangolo.com/)
+[![Rich](https://img.shields.io/badge/UI-Rich-FAAD14)](https://github.com/Textualize/rich)
+[![Pytest](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
+[![Ruff](https://img.shields.io/badge/lint-Ruff-D7FF64)](https://docs.astral.sh/ruff/)
+[![mypy](https://img.shields.io/badge/type%20check-mypy-2A6DB2)](https://mypy-lang.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/SonFire03/IronAudit/ci.yml?branch=main&label=ci)](https://github.com/SonFire03/IronAudit/actions/workflows/ci.yml)
+[![Privacy Guard](https://img.shields.io/github/actions/workflow/status/SonFire03/IronAudit/privacy-guard.yml?branch=main&label=privacy%20guard)](https://github.com/SonFire03/IronAudit/actions/workflows/privacy-guard.yml)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+
 ---
 
 ## ENGLISH

@@ -58,6 +58,40 @@ def write_pdf(report: ScanReport, output_path: Path) -> None:
     )
     story.extend([Paragraph("Findings By Severity", h2), severity_table, Spacer(1, 5 * mm)])
 
+    if report.scoring is not None:
+        story.append(Paragraph("Scoring Breakdown", h2))
+        story.append(
+            Paragraph(
+                f"Base score: <b>{report.scoring.base_score}</b> | "
+                f"Total deduction: <b>{report.scoring.total_deduction}</b> | "
+                f"Final score: <b>{report.scoring.final_score}</b> | "
+                f"Rating: <b>{report.scoring.rating_label}</b>",
+                body,
+            )
+        )
+        score_rows = [["Severity", "Raw", "Cap", "Capped"]]
+        for level in ["critical", "high", "medium", "low", "info"]:
+            score_rows.append(
+                [
+                    level.capitalize(),
+                    str(report.scoring.deductions_by_severity.get(level, 0)),
+                    str(report.scoring.caps_by_severity.get(level, 0)),
+                    str(report.scoring.capped_deductions_by_severity.get(level, 0)),
+                ]
+            )
+        score_table = Table(score_rows, colWidths=[35 * mm, 22 * mm, 22 * mm, 24 * mm])
+        score_table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0B1F3A")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#CBD3DC")),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ]
+            )
+        )
+        story.extend([score_table, Spacer(1, 5 * mm)])
+
     story.append(Paragraph("Technical Details", h2))
     rows = [["Check", "Severity", "Status", "Title", "Recommended Fix"]]
     for finding in report.findings[:40]:

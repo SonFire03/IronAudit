@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2 - 2026-05-04
+
+- Reworked README for faster project understanding and clearer defensive positioning
+- Clarified tool scope: lightweight local Linux posture auditor, not a replacement for Lynis/OpenSCAP/Nessus/OpenVAS
+- Added scoring documentation with base score, severity caps, deductions, rating labels, and rationale
+- Documented full CLI report outputs (terminal, JSON, Markdown, HTML, PDF, SARIF)
+- Added sample report links for JSON/HTML/PDF artifacts
+- Added screenshot section and repository screenshot placeholders under `docs/screenshots/`
+- Added Reddit-ready feedback section inviting input on checks, scoring, reports, and UX
+- Prepared repository messaging for public open-source feedback
+
 ## 0.2.0 - 2026-04-25
 
 - Added scan profiles with weighted scoring (`workstation`, `server`, `minimal`)

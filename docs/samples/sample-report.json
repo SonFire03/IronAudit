@@ -15,7 +15,7 @@
       "category": "patching",
       "check_id": "updates",
       "evidence": "27 package(s) upgradable. Sample: openssl, curl, libc6",
-      "points": 8,
+      "points": 14,
       "references": [],
       "remediation": "Run apt update && apt upgrade on a validated maintenance window.",
       "severity": "medium",
@@ -37,7 +37,7 @@
       "category": "ssh",
       "check_id": "ssh",
       "evidence": "PasswordAuthentication yes",
-      "points": 15,
+      "points": 18,
       "references": [],
       "remediation": "Set `PasswordAuthentication no` and use SSH keys.",
       "severity": "high",
@@ -48,7 +48,7 @@
       "category": "network",
       "check_id": "ports",
       "evidence": "6 external listeners detected",
-      "points": 8,
+      "points": 12,
       "references": [],
       "remediation": "Review each open service for business need and network restriction.",
       "severity": "medium",
@@ -56,21 +56,10 @@
       "title": "Multiple externally reachable TCP listeners"
     },
     {
-      "category": "services",
-      "check_id": "enabled_services",
-      "evidence": "41 enabled services detected. Sample: ssh.service, cron.service, rsyslog.service",
-      "points": 0,
-      "references": [],
-      "remediation": "Keep startup services minimal and aligned with system role.",
-      "severity": "info",
-      "status": "info",
-      "title": "Enabled services inventory"
-    },
-    {
       "category": "filesystem",
       "check_id": "permissions",
       "evidence": "Found 3 world-writable entries. Sample: /opt/tools/tmp.sock, /var/www/cache",
-      "points": 15,
+      "points": 16,
       "references": [],
       "remediation": "Remove world-writable bits from sensitive paths (chmod o-w).",
       "severity": "high",
@@ -85,8 +74,35 @@
     "scan_profile": "server",
     "scanned_at": "2026-05-04T10:30:00+00:00"
   },
-  "rating": "Critical",
-  "score": 34,
+  "rating": "Weak",
+  "score": 52,
+  "scoring": {
+    "base_score": 100,
+    "capped_deductions_by_severity": {
+      "critical": 0,
+      "high": 30,
+      "info": 0,
+      "low": 0,
+      "medium": 18
+    },
+    "caps_by_severity": {
+      "critical": 80,
+      "high": 30,
+      "info": 0,
+      "low": 8,
+      "medium": 18
+    },
+    "deductions_by_severity": {
+      "critical": 0,
+      "high": 54,
+      "info": 0,
+      "low": 0,
+      "medium": 26
+    },
+      "final_score": 52,
+      "rating_label": "Weak",
+      "total_deduction": 48
+  },
   "selected_checks": [
     "system",
     "updates",

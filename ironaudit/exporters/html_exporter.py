@@ -5,7 +5,6 @@ from collections import Counter
 
 from ironaudit.models import Finding, ScanReport
 
-
 SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
 
 
@@ -23,6 +22,7 @@ def to_html(report: ScanReport) -> str:
         grouped.setdefault(finding.severity, []).append(finding)
 
     severity_blocks = "".join(_severity_section(level, grouped.get(level, [])) for level in SEVERITY_ORDER)
+    scoring_block = _scoring_breakdown(report)
 
     return f"""<!doctype html>
 <html lang='en'>
@@ -99,6 +99,11 @@ def to_html(report: ScanReport) -> str:
     </section>
 
     <section class='section'>
+      <h2>Scoring Breakdown</h2>
+      {scoring_block}
+    </section>
+
+    <section class='section'>
       <h2>Technical Details</h2>
       {severity_blocks}
     </section>
@@ -163,3 +168,28 @@ def _top_fixes(report: ScanReport) -> str:
         if len(items) >= 10:
             break
     return "".join(items)
+
+
+def _scoring_breakdown(report: ScanReport) -> str:
+    if report.scoring is None:
+        return "<p class='muted'>Scoring breakdown not available in this report.</p>"
+    rows: list[str] = []
+    for level in SEVERITY_ORDER:
+        raw = report.scoring.deductions_by_severity.get(level, 0)
+        cap = report.scoring.caps_by_severity.get(level, 0)
+        used = report.scoring.capped_deductions_by_severity.get(level, 0)
+        rows.append(
+            f"<tr><td>{html.escape(level)}</td><td>{raw}</td><td>{cap}</td><td>{used}</td></tr>"
+        )
+    return (
+        "<p>"
+        f"Base score: <strong>{report.scoring.base_score}</strong> | "
+        f"Total deduction: <strong>{report.scoring.total_deduction}</strong> | "
+        f"Final score: <strong>{report.scoring.final_score}</strong> | "
+        f"Rating label: <strong>{html.escape(report.scoring.rating_label)}</strong>"
+        "</p>"
+        "<table style='width:100%; border-collapse:collapse;'>"
+        "<thead><tr><th style='text-align:left'>Severity</th><th style='text-align:left'>Raw deduction</th>"
+        "<th style='text-align:left'>Cap</th><th style='text-align:left'>Capped deduction</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+    )

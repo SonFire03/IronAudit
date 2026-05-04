@@ -9,6 +9,36 @@ Status = Literal["pass", "fail", "warn", "info", "unsupported"]
 
 
 @dataclass(slots=True)
+class ScoringBreakdown:
+    base_score: int
+    deductions_by_severity: dict[str, int]
+    caps_by_severity: dict[str, int]
+    capped_deductions_by_severity: dict[str, int]
+    total_deduction: int
+    final_score: int
+    rating_label: str
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ScoringBreakdown:
+        return cls(
+            base_score=int(data.get("base_score", 100)),
+            deductions_by_severity={
+                str(k): int(v) for k, v in dict(data.get("deductions_by_severity", {})).items()
+            },
+            caps_by_severity={str(k): int(v) for k, v in dict(data.get("caps_by_severity", {})).items()},
+            capped_deductions_by_severity={
+                str(k): int(v) for k, v in dict(data.get("capped_deductions_by_severity", {})).items()
+            },
+            total_deduction=int(data.get("total_deduction", 0)),
+            final_score=int(data.get("final_score", 100)),
+            rating_label=str(data.get("rating_label", "Excellent")),
+        )
+
+
+@dataclass(slots=True)
 class Finding:
     check_id: str
     title: str
@@ -75,6 +105,7 @@ class ScanReport:
     findings: list[Finding]
     score: int
     rating: str
+    scoring: ScoringBreakdown | None = None
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -102,4 +133,7 @@ class ScanReport:
             findings=findings,
             score=score,
             rating=str(data.get("rating", "Critical")),
+            scoring=ScoringBreakdown.from_dict(data["scoring"])
+            if isinstance(data.get("scoring"), dict)
+            else None,
         )

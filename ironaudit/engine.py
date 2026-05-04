@@ -17,7 +17,7 @@ from ironaudit.checks import (
 )
 from ironaudit.models import Finding, ScanMetadata, ScanReport
 from ironaudit.profiles import apply_profile, get_profile
-from ironaudit.scoring import compute_score, score_rating
+from ironaudit.scoring import compute_score_breakdown
 from ironaudit.utils import detect_distro, hostname
 
 CheckFn = Callable[[], list[Finding]]
@@ -97,8 +97,9 @@ def run_scan(
             )
 
     apply_profile(findings, profile)
-    score = compute_score(findings)
-    rating = score_rating(score)
+    scoring = compute_score_breakdown(findings)
+    score = scoring.final_score
+    rating = scoring.rating_label
 
     duration = round(perf_counter() - started, 3)
     metadata = ScanMetadata(
@@ -113,4 +114,5 @@ def run_scan(
         findings=findings,
         score=score,
         rating=rating,
+        scoring=scoring,
     )

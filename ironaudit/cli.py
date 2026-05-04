@@ -96,6 +96,21 @@ def _render_terminal(
 
     console.print(table)
     console.print(f"Score: {report.score}/100 ({report.rating})")
+    if report.scoring is not None:
+        sev_order = ["critical", "high", "medium", "low", "info"]
+        summary = []
+        for sev in sev_order:
+            raw = report.scoring.deductions_by_severity.get(sev, 0)
+            cap = report.scoring.caps_by_severity.get(sev, 0)
+            used = report.scoring.capped_deductions_by_severity.get(sev, 0)
+            summary.append(f"{sev} {used}/{cap} (raw {raw})")
+        console.print(
+            "Scoring breakdown: "
+            f"base {report.scoring.base_score} | "
+            f"deduction {report.scoring.total_deduction} | "
+            f"final {report.scoring.final_score} | "
+            + "; ".join(summary)
+        )
 
     if output:
         output.write_text(to_json(report), encoding="utf-8")

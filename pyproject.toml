@@ -68,5 +68,9 @@ no_implicit_optional = true
 strict_equality = true
 pretty = true
 
+[[tool.mypy.overrides]]
+module = ["reportlab.*"]
+ignore_missing_imports = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["ironaudit"]

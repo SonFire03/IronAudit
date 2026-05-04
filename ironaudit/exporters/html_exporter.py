@@ -3,108 +3,163 @@ from __future__ import annotations
 import html
 from collections import Counter
 
-from ironaudit.models import ScanReport
+from ironaudit.models import Finding, ScanReport
+
+
+SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
 
 
 def to_html(report: ScanReport) -> str:
-    counts = Counter(f.status for f in report.findings)
-
-    rows: list[str] = []
-    for finding in report.findings:
-        rows.append(
-            "<tr>"
-            f"<td>{html.escape(finding.check_id)}</td>"
-            f"<td><span class='chip status-{html.escape(finding.status)}'>{html.escape(finding.status)}</span></td>"
-            f"<td><span class='chip sev-{html.escape(finding.severity)}'>{html.escape(finding.severity)}</span></td>"
-            f"<td>{html.escape(finding.title)}</td>"
-            f"<td>{finding.points}</td>"
-            f"<td>{html.escape(finding.evidence)}</td>"
-            f"<td>{html.escape(finding.remediation)}</td>"
-            "</tr>"
-        )
-
     duration = (
         f"{report.metadata.duration_seconds:.3f}s"
         if report.metadata.duration_seconds is not None
         else "n/a"
     )
+    status_counts = Counter(f.status for f in report.findings)
+    severity_counts = Counter(f.severity for f in report.findings)
+
+    grouped: dict[str, list[Finding]] = {level: [] for level in SEVERITY_ORDER}
+    for finding in report.findings:
+        grouped.setdefault(finding.severity, []).append(finding)
+
+    severity_blocks = "".join(_severity_section(level, grouped.get(level, [])) for level in SEVERITY_ORDER)
 
     return f"""<!doctype html>
 <html lang='en'>
 <head>
   <meta charset='utf-8' />
   <meta name='viewport' content='width=device-width, initial-scale=1' />
-  <title>IronAudit Report</title>
+  <title>IronAudit Pro Report</title>
   <style>
     :root {{
-      --bg: #05080e;
-      --panel: #0a101a;
-      --text: #d7f7e9;
-      --muted: #7ea893;
-      --border: #173528;
-      --good: #00e691;
-      --warn: #ffb020;
-      --bad: #ff5d73;
-      --info: #28d7ff;
-      --unsupported: #9ab4a7;
+      --ink: #16202a;
+      --slate: #526170;
+      --paper: #f4f7fb;
+      --card: #ffffff;
+      --accent: #0c4a7d;
+      --accent-soft: #dce8f5;
+      --critical: #b00020;
+      --high: #d1431f;
+      --medium: #b7791f;
+      --low: #2f855a;
+      --info: #2b6cb0;
+      --border: #d7e0ea;
     }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; font-family: "JetBrains Mono", "IBM Plex Mono", monospace; background: var(--bg); color: var(--text); }}
-    .wrap {{ max-width: 1200px; margin: 20px auto; padding: 0 14px; }}
-    .card {{ background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }}
-    .kpi {{ display: grid; grid-template-columns: repeat(6, minmax(80px, 1fr)); gap: 10px; }}
-    .kpi > div {{ border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #0b1621; }}
-    .label {{ color: var(--muted); font-size: .73rem; text-transform: uppercase; }}
-    .value {{ font-size: 1.2rem; font-weight: 800; margin-top: 3px; }}
-    table {{ width: 100%; border-collapse: collapse; min-width: 900px; }}
-    th, td {{ border-bottom: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; font-size: .88rem; }}
-    th {{ color: var(--muted); text-transform: uppercase; font-size: .74rem; }}
-    .table-wrap {{ overflow: auto; border: 1px solid var(--border); border-radius: 10px; }}
-    .chip {{ border: 1px solid currentColor; border-radius: 999px; padding: 1px 7px; font-size: .75rem; font-weight: 800; }}
-    .status-pass {{ color: var(--good); }}
-    .status-fail {{ color: var(--bad); }}
-    .status-warn {{ color: var(--warn); }}
-    .status-info {{ color: var(--info); }}
-    .status-unsupported {{ color: var(--unsupported); }}
-    .sev-critical {{ color: #ff4d67; }}
-    .sev-high {{ color: #ff7a5b; }}
-    .sev-medium {{ color: #ffb020; }}
-    .sev-low {{ color: #00d884; }}
-    .sev-info {{ color: #28d7ff; }}
-    @media (max-width: 800px) {{ .kpi {{ grid-template-columns: repeat(2, minmax(80px, 1fr)); }} }}
+    body {{ margin: 0; font-family: "Source Sans 3", "Segoe UI", Tahoma, sans-serif; color: var(--ink); background: linear-gradient(140deg, #f7f9fc 0%, #edf3f9 55%, #e7eef7 100%); }}
+    .wrap {{ max-width: 1200px; margin: 24px auto; padding: 0 16px; }}
+    .hero {{ background: linear-gradient(150deg, #0d3f66 0%, #155384 65%, #1f6aa6 100%); color: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 12px 30px rgba(12, 44, 73, .18); }}
+    .hero h1 {{ margin: 0 0 6px; font-size: 1.8rem; }}
+    .hero p {{ margin: 4px 0; color: #e7f2fc; }}
+    .grid {{ display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }}
+    .metric {{ background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.22); border-radius: 12px; padding: 10px 12px; }}
+    .metric .k {{ font-size: .8rem; opacity: .86; text-transform: uppercase; }}
+    .metric .v {{ font-size: 1.36rem; font-weight: 700; }}
+    .section {{ background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-top: 14px; padding: 16px; box-shadow: 0 4px 14px rgba(17, 40, 63, .05); }}
+    h2 {{ margin: 0 0 12px; font-size: 1.2rem; color: #103a5f; }}
+    .summary {{ display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; }}
+    .pill {{ border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 700; display: inline-block; }}
+    .critical {{ background: #ffe4ea; color: var(--critical); }}
+    .high {{ background: #ffe8e0; color: var(--high); }}
+    .medium {{ background: #fff2df; color: var(--medium); }}
+    .low {{ background: #e3f5ea; color: var(--low); }}
+    .info {{ background: #e3eefc; color: var(--info); }}
+    .finding {{ border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px; background: #fff; }}
+    .muted {{ color: var(--slate); }}
+    code {{ background: #f2f6fb; border: 1px solid #e3eaf3; border-radius: 6px; padding: 1px 6px; }}
+    ul {{ margin: 0; padding-left: 18px; }}
+    .disclaimer {{ font-size: .9rem; color: #445564; }}
+    @media (max-width: 900px) {{ .grid {{ grid-template-columns: repeat(2, minmax(120px, 1fr)); }} .summary {{ grid-template-columns: repeat(2, minmax(120px, 1fr)); }} }}
   </style>
 </head>
 <body>
   <div class='wrap'>
-    <section class='card'>
-      <h1 style='margin:0 0 8px;'>IronAudit Report</h1>
-      <div style='color:var(--muted);'>Linux security posture auditor with scoring, findings, and remediation guidance.</div>
-      <p style='margin:10px 0 0;'>Host: <strong>{html.escape(report.metadata.hostname)}</strong> | Distro: <strong>{html.escape(report.metadata.distro)}</strong> | Scanned: <strong>{html.escape(report.metadata.scanned_at)}</strong> | Duration: <strong>{duration}</strong></p>
-      <p style='margin:8px 0 0;'>Score: <strong>{report.score}/100 ({html.escape(report.rating)})</strong> | Checks: {html.escape(', '.join(report.selected_checks))}</p>
-    </section>
-
-    <section class='card kpi'>
-      <div><div class='label'>Pass</div><div class='value'>{counts.get('pass', 0)}</div></div>
-      <div><div class='label'>Fail</div><div class='value'>{counts.get('fail', 0)}</div></div>
-      <div><div class='label'>Warn</div><div class='value'>{counts.get('warn', 0)}</div></div>
-      <div><div class='label'>Info</div><div class='value'>{counts.get('info', 0)}</div></div>
-      <div><div class='label'>Unsupported</div><div class='value'>{counts.get('unsupported', 0)}</div></div>
-      <div><div class='label'>Findings</div><div class='value'>{len(report.findings)}</div></div>
-    </section>
-
-    <section class='card'>
-      <div class='table-wrap'>
-        <table>
-          <thead>
-            <tr><th>Check</th><th>Status</th><th>Severity</th><th>Title</th><th>Pts</th><th>Evidence</th><th>Remediation</th></tr>
-          </thead>
-          <tbody>
-            {''.join(rows)}
-          </tbody>
-        </table>
+    <section class='hero'>
+      <h1>IronAudit Pro - Security Audit Report</h1>
+      <p>Executive Summary for authorized local Linux security posture assessment.</p>
+      <p>Host: <strong>{html.escape(report.metadata.hostname)}</strong> | Distribution: <strong>{html.escape(report.metadata.distro)}</strong></p>
+      <p>Scan date: <strong>{html.escape(report.metadata.scanned_at)}</strong> | Duration: <strong>{duration}</strong> | Profile: <strong>{html.escape(report.metadata.scan_profile or 'workstation')}</strong></p>
+      <div class='grid'>
+        <div class='metric'><div class='k'>Global Score</div><div class='v'>{report.score}/100</div></div>
+        <div class='metric'><div class='k'>Risk Rating</div><div class='v'>{html.escape(report.rating)}</div></div>
+        <div class='metric'><div class='k'>Findings</div><div class='v'>{len(report.findings)}</div></div>
+        <div class='metric'><div class='k'>Failures</div><div class='v'>{status_counts.get('fail', 0)}</div></div>
       </div>
+    </section>
+
+    <section class='section'>
+      <h2>Findings By Severity</h2>
+      <div class='summary'>
+        <div><span class='pill critical'>Critical</span><div>{severity_counts.get('critical', 0)}</div></div>
+        <div><span class='pill high'>High</span><div>{severity_counts.get('high', 0)}</div></div>
+        <div><span class='pill medium'>Medium</span><div>{severity_counts.get('medium', 0)}</div></div>
+        <div><span class='pill low'>Low</span><div>{severity_counts.get('low', 0)}</div></div>
+        <div><span class='pill info'>Info</span><div>{severity_counts.get('info', 0)}</div></div>
+      </div>
+    </section>
+
+    <section class='section'>
+      <h2>Technical Details</h2>
+      {severity_blocks}
+    </section>
+
+    <section class='section'>
+      <h2>Recommended Fixes</h2>
+      <ul>
+        {_top_fixes(report)}
+      </ul>
+    </section>
+
+    <section class='section'>
+      <h2>Command Examples</h2>
+      <ul>
+        <li><code>sudo apt update && sudo apt upgrade</code></li>
+        <li><code>sudo ufw status verbose</code></li>
+        <li><code>sudo ss -lntup</code></li>
+        <li><code>sudo systemctl list-unit-files --type=service --state=enabled</code></li>
+        <li><code>sudo chmod o-w &lt;path&gt;</code></li>
+      </ul>
+    </section>
+
+    <section class='section'>
+      <h2>Legal / Safe-Use Disclaimer</h2>
+      <p class='disclaimer'>IronAudit Pro is designed for defensive security auditing on systems you own or are explicitly authorized to assess. The tool performs local read-only checks and does not include exploit code or aggressive scanning behavior.</p>
     </section>
   </div>
 </body>
 </html>
 """
+
+
+def _severity_section(level: str, findings: list[Finding]) -> str:
+    if not findings:
+        return f"<h3>{level.capitalize()}</h3><p class='muted'>No findings.</p>"
+
+    blocks = [f"<h3>{level.capitalize()} ({len(findings)})</h3>"]
+    for finding in findings:
+        blocks.append(
+            "<article class='finding'>"
+            f"<div><strong>{html.escape(finding.title)}</strong> <span class='pill {html.escape(finding.severity)}'>{html.escape(finding.severity)}</span></div>"
+            f"<div class='muted'>Check: {html.escape(finding.check_id)} | Status: {html.escape(finding.status)} | Category: {html.escape(finding.category)} | Points: {finding.points}</div>"
+            f"<p><strong>Evidence:</strong> {html.escape(finding.evidence)}</p>"
+            f"<p><strong>Recommended fix:</strong> {html.escape(finding.remediation)}</p>"
+            "</article>"
+        )
+    return "".join(blocks)
+
+
+def _top_fixes(report: ScanReport) -> str:
+    risky = [f for f in report.findings if f.status in {"fail", "warn"}]
+    if not risky:
+        return "<li>No immediate remediation required based on current findings.</li>"
+
+    seen: set[str] = set()
+    items: list[str] = []
+    for finding in risky:
+        if finding.remediation in seen:
+            continue
+        seen.add(finding.remediation)
+        items.append(f"<li>{html.escape(finding.remediation)}</li>")
+        if len(items) >= 10:
+            break
+    return "".join(items)

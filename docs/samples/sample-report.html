@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1' />
+  <title>IronAudit Pro Report</title>
+  <style>
+    :root {
+      --ink: #16202a;
+      --slate: #526170;
+      --paper: #f4f7fb;
+      --card: #ffffff;
+      --accent: #0c4a7d;
+      --accent-soft: #dce8f5;
+      --critical: #b00020;
+      --high: #d1431f;
+      --medium: #b7791f;
+      --low: #2f855a;
+      --info: #2b6cb0;
+      --border: #d7e0ea;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Source Sans 3", "Segoe UI", Tahoma, sans-serif; color: var(--ink); background: linear-gradient(140deg, #f7f9fc 0%, #edf3f9 55%, #e7eef7 100%); }
+    .wrap { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    .hero { background: linear-gradient(150deg, #0d3f66 0%, #155384 65%, #1f6aa6 100%); color: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 12px 30px rgba(12, 44, 73, .18); }
+    .hero h1 { margin: 0 0 6px; font-size: 1.8rem; }
+    .hero p { margin: 4px 0; color: #e7f2fc; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
+    .metric { background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.22); border-radius: 12px; padding: 10px 12px; }
+    .metric .k { font-size: .8rem; opacity: .86; text-transform: uppercase; }
+    .metric .v { font-size: 1.36rem; font-weight: 700; }
+    .section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-top: 14px; padding: 16px; box-shadow: 0 4px 14px rgba(17, 40, 63, .05); }
+    h2 { margin: 0 0 12px; font-size: 1.2rem; color: #103a5f; }
+    .summary { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; }
+    .pill { border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 700; display: inline-block; }
+    .critical { background: #ffe4ea; color: var(--critical); }
+    .high { background: #ffe8e0; color: var(--high); }
+    .medium { background: #fff2df; color: var(--medium); }
+    .low { background: #e3f5ea; color: var(--low); }
+    .info { background: #e3eefc; color: var(--info); }
+    .finding { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px; background: #fff; }
+    .muted { color: var(--slate); }
+    code { background: #f2f6fb; border: 1px solid #e3eaf3; border-radius: 6px; padding: 1px 6px; }
+    ul { margin: 0; padding-left: 18px; }
+    .disclaimer { font-size: .9rem; color: #445564; }
+    @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); } .summary { grid-template-columns: repeat(2, minmax(120px, 1fr)); } }
+  </style>
+</head>
+<body>
+  <div class='wrap'>
+    <section class='hero'>
+      <h1>IronAudit Pro - Security Audit Report</h1>
+      <p>Executive Summary for authorized local Linux security posture assessment.</p>
+      <p>Host: <strong>client-prod-01</strong> | Distribution: <strong>Ubuntu 24.04 LTS</strong></p>
+      <p>Scan date: <strong>2026-05-04T10:30:00+00:00</strong> | Duration: <strong>2.143s</strong> | Profile: <strong>server</strong></p>
+      <div class='grid'>
+        <div class='metric'><div class='k'>Global Score</div><div class='v'>34/100</div></div>
+        <div class='metric'><div class='k'>Risk Rating</div><div class='v'>Critical</div></div>
+        <div class='metric'><div class='k'>Findings</div><div class='v'>7</div></div>
+        <div class='metric'><div class='k'>Failures</div><div class='v'>3</div></div>
+      </div>
+    </section>
+
+    <section class='section'>
+      <h2>Findings By Severity</h2>
+      <div class='summary'>
+        <div><span class='pill critical'>Critical</span><div>0</div></div>
+        <div><span class='pill high'>High</span><div>3</div></div>
+        <div><span class='pill medium'>Medium</span><div>2</div></div>
+        <div><span class='pill low'>Low</span><div>0</div></div>
+        <div><span class='pill info'>Info</span><div>2</div></div>
+      </div>
+    </section>
+
+    <section class='section'>
+      <h2>Technical Details</h2>
+      <h3>Critical</h3><p class='muted'>No findings.</p><h3>High (3)</h3><article class='finding'><div><strong>UFW installed but inactive</strong> <span class='pill high'>high</span></div><div class='muted'>Check: firewall | Status: fail | Category: firewall | Points: 20</div><p><strong>Evidence:</strong> Status: inactive</p><p><strong>Recommended fix:</strong> Enable UFW with a deny-by-default inbound policy.</p></article><article class='finding'><div><strong>SSH password authentication enabled</strong> <span class='pill high'>high</span></div><div class='muted'>Check: ssh | Status: fail | Category: ssh | Points: 15</div><p><strong>Evidence:</strong> PasswordAuthentication yes</p><p><strong>Recommended fix:</strong> Set `PasswordAuthentication no` and use SSH keys.</p></article><article class='finding'><div><strong>Sensitive world-writable paths found</strong> <span class='pill high'>high</span></div><div class='muted'>Check: permissions | Status: fail | Category: filesystem | Points: 15</div><p><strong>Evidence:</strong> Found 3 world-writable entries. Sample: /opt/tools/tmp.sock, /var/www/cache</p><p><strong>Recommended fix:</strong> Remove world-writable bits from sensitive paths (chmod o-w).</p></article><h3>Medium (2)</h3><article class='finding'><div><strong>Pending package updates detected</strong> <span class='pill medium'>medium</span></div><div class='muted'>Check: updates | Status: warn | Category: patching | Points: 8</div><p><strong>Evidence:</strong> 27 package(s) upgradable. Sample: openssl, curl, libc6</p><p><strong>Recommended fix:</strong> Run apt update &amp;&amp; apt upgrade on a validated maintenance window.</p></article><article class='finding'><div><strong>Multiple externally reachable TCP listeners</strong> <span class='pill medium'>medium</span></div><div class='muted'>Check: ports | Status: warn | Category: network | Points: 8</div><p><strong>Evidence:</strong> 6 external listeners detected</p><p><strong>Recommended fix:</strong> Review each open service for business need and network restriction.</p></article><h3>Low</h3><p class='muted'>No findings.</p><h3>Info (2)</h3><article class='finding'><div><strong>System information collected</strong> <span class='pill info'>info</span></div><div class='muted'>Check: system | Status: info | Category: system | Points: 0</div><p><strong>Evidence:</strong> host=client-prod-01, distro=Ubuntu 24.04 LTS, kernel=6.8.0-31-generic, arch=x86_64</p><p><strong>Recommended fix:</strong> Use this inventory as baseline metadata for audit evidence.</p></article><article class='finding'><div><strong>Enabled services inventory</strong> <span class='pill info'>info</span></div><div class='muted'>Check: enabled_services | Status: info | Category: services | Points: 0</div><p><strong>Evidence:</strong> 41 enabled services detected. Sample: ssh.service, cron.service, rsyslog.service</p><p><strong>Recommended fix:</strong> Keep startup services minimal and aligned with system role.</p></article>
+    </section>
+
+    <section class='section'>
+      <h2>Recommended Fixes</h2>
+      <ul>
+        <li>Run apt update &amp;&amp; apt upgrade on a validated maintenance window.</li><li>Enable UFW with a deny-by-default inbound policy.</li><li>Set `PasswordAuthentication no` and use SSH keys.</li><li>Review each open service for business need and network restriction.</li><li>Remove world-writable bits from sensitive paths (chmod o-w).</li>
+      </ul>
+    </section>
+
+    <section class='section'>
+      <h2>Command Examples</h2>
+      <ul>
+        <li><code>sudo apt update && sudo apt upgrade</code></li>
+        <li><code>sudo ufw status verbose</code></li>
+        <li><code>sudo ss -lntup</code></li>
+        <li><code>sudo systemctl list-unit-files --type=service --state=enabled</code></li>
+        <li><code>sudo chmod o-w &lt;path&gt;</code></li>
+      </ul>
+    </section>
+
+    <section class='section'>
+      <h2>Legal / Safe-Use Disclaimer</h2>
+      <p class='disclaimer'>IronAudit Pro is designed for defensive security auditing on systems you own or are explicitly authorized to assess. The tool performs local read-only checks and does not include exploit code or aggressive scanning behavior.</p>
+    </section>
+  </div>
+</body>
+</html>

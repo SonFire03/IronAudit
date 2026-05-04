@@ -1,0 +1,99 @@
+{
+  "findings": [
+    {
+      "category": "system",
+      "check_id": "system",
+      "evidence": "host=client-prod-01, distro=Ubuntu 24.04 LTS, kernel=6.8.0-31-generic, arch=x86_64",
+      "points": 0,
+      "references": [],
+      "remediation": "Use this inventory as baseline metadata for audit evidence.",
+      "severity": "info",
+      "status": "info",
+      "title": "System information collected"
+    },
+    {
+      "category": "patching",
+      "check_id": "updates",
+      "evidence": "27 package(s) upgradable. Sample: openssl, curl, libc6",
+      "points": 8,
+      "references": [],
+      "remediation": "Run apt update && apt upgrade on a validated maintenance window.",
+      "severity": "medium",
+      "status": "warn",
+      "title": "Pending package updates detected"
+    },
+    {
+      "category": "firewall",
+      "check_id": "firewall",
+      "evidence": "Status: inactive",
+      "points": 20,
+      "references": [],
+      "remediation": "Enable UFW with a deny-by-default inbound policy.",
+      "severity": "high",
+      "status": "fail",
+      "title": "UFW installed but inactive"
+    },
+    {
+      "category": "ssh",
+      "check_id": "ssh",
+      "evidence": "PasswordAuthentication yes",
+      "points": 15,
+      "references": [],
+      "remediation": "Set `PasswordAuthentication no` and use SSH keys.",
+      "severity": "high",
+      "status": "fail",
+      "title": "SSH password authentication enabled"
+    },
+    {
+      "category": "network",
+      "check_id": "ports",
+      "evidence": "6 external listeners detected",
+      "points": 8,
+      "references": [],
+      "remediation": "Review each open service for business need and network restriction.",
+      "severity": "medium",
+      "status": "warn",
+      "title": "Multiple externally reachable TCP listeners"
+    },
+    {
+      "category": "services",
+      "check_id": "enabled_services",
+      "evidence": "41 enabled services detected. Sample: ssh.service, cron.service, rsyslog.service",
+      "points": 0,
+      "references": [],
+      "remediation": "Keep startup services minimal and aligned with system role.",
+      "severity": "info",
+      "status": "info",
+      "title": "Enabled services inventory"
+    },
+    {
+      "category": "filesystem",
+      "check_id": "permissions",
+      "evidence": "Found 3 world-writable entries. Sample: /opt/tools/tmp.sock, /var/www/cache",
+      "points": 15,
+      "references": [],
+      "remediation": "Remove world-writable bits from sensitive paths (chmod o-w).",
+      "severity": "high",
+      "status": "fail",
+      "title": "Sensitive world-writable paths found"
+    }
+  ],
+  "metadata": {
+    "distro": "Ubuntu 24.04 LTS",
+    "duration_seconds": 2.143,
+    "hostname": "client-prod-01",
+    "scan_profile": "server",
+    "scanned_at": "2026-05-04T10:30:00+00:00"
+  },
+  "rating": "Critical",
+  "score": 34,
+  "selected_checks": [
+    "system",
+    "updates",
+    "firewall",
+    "ssh",
+    "ports",
+    "enabled_services",
+    "permissions"
+  ]
+}

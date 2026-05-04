@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ironaudit"
-version = "0.2.0"
-description = "Linux security posture auditor with scoring, findings, and remediation guidance."
+version = "0.1.0"
+description = "IronAudit Pro: professional local Linux security audit tool with client-ready reports."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -28,7 +28,8 @@ classifiers = [
 ]
 dependencies = [
   "typer>=0.12,<1.0",
-  "rich>=13.7,<14.0"
+  "rich>=13.7,<14.0",
+  "reportlab>=4.2,<5.0"
 ]
 
 [project.optional-dependencies]

@@ -17,6 +17,7 @@ from ironaudit.engine import available_checks, run_scan
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.json_exporter import to_json
 from ironaudit.exporters.markdown_exporter import to_markdown
+from ironaudit.exporters.pdf_exporter import write_pdf
 from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.history import (
     latest_two_reports,
@@ -44,6 +45,7 @@ def _render_terminal(
     report_json: bool,
     report_md: bool,
     report_html: bool,
+    report_pdf: bool,
     report_sarif: bool,
     output: Path | None,
     report: ScanReport,
@@ -54,10 +56,19 @@ def _render_terminal(
         payload = to_markdown(report)
     elif report_html:
         payload = to_html(report)
+    elif report_pdf:
+        payload = ""
     elif report_sarif:
         payload = to_sarif(report)
     else:
         payload = ""
+
+    if report_pdf:
+        if output is None:
+            raise typer.BadParameter("--output is required with --pdf.")
+        write_pdf(report, output)
+        console.print(f"Report written to {output}")
+        return
 
     if report_json or report_md or report_html or report_sarif:
         if output:
@@ -96,6 +107,7 @@ def scan(
     json_output: Annotated[bool, typer.Option("--json", help="Print/export report as JSON")] = False,
     md_output: Annotated[bool, typer.Option("--md", help="Print/export report as Markdown")] = False,
     html_output: Annotated[bool, typer.Option("--html", help="Print/export report as HTML")] = False,
+    pdf_output: Annotated[bool, typer.Option("--pdf", help="Export report as PDF")] = False,
     sarif_output: Annotated[bool, typer.Option("--sarif", help="Print/export report as SARIF")] = False,
     output: Annotated[Path | None, typer.Option("--output", help="Output file path")] = None,
     save_history: Annotated[
@@ -109,9 +121,9 @@ def scan(
     exclude: Annotated[str | None, typer.Option("--exclude", help="Comma-separated checks to exclude")] = None,
 ) -> None:
     """Run local Linux hardening audit checks."""
-    output_modes = [json_output, md_output, html_output, sarif_output]
+    output_modes = [json_output, md_output, html_output, pdf_output, sarif_output]
     if sum(1 for mode in output_modes if mode) > 1:
-        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --sarif.")
+        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --pdf, --sarif.")
 
     if profile not in available_profiles():
         raise typer.BadParameter(
@@ -131,6 +143,7 @@ def scan(
         report_json=json_output,
         report_md=md_output,
         report_html=html_output,
+        report_pdf=pdf_output,
         report_sarif=sarif_output,
         output=output,
         report=report,
@@ -272,20 +285,23 @@ def history_show(
     json_output: Annotated[bool, typer.Option("--json", help="Print snapshot as JSON")] = False,
     md_output: Annotated[bool, typer.Option("--md", help="Print snapshot as Markdown")] = False,
     html_output: Annotated[bool, typer.Option("--html", help="Print snapshot as HTML")] = False,
+    pdf_output: Annotated[bool, typer.Option("--pdf", help="Print snapshot as PDF")] = False,
     sarif_output: Annotated[bool, typer.Option("--sarif", help="Print snapshot as SARIF")] = False,
+    output: Annotated[Path | None, typer.Option("--output", help="Output file path for exported snapshot")] = None,
 ) -> None:
     """Show a stored history snapshot."""
-    output_modes = [json_output, md_output, html_output, sarif_output]
+    output_modes = [json_output, md_output, html_output, pdf_output, sarif_output]
     if sum(1 for mode in output_modes if mode) > 1:
-        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --sarif.")
+        raise typer.BadParameter("Use only one output mode among --json, --md, --html, --pdf, --sarif.")
 
     report = load_snapshot_by_id(snapshot_id)
     _render_terminal(
         report_json=json_output,
         report_md=md_output,
         report_html=html_output,
+        report_pdf=pdf_output,
         report_sarif=sarif_output,
-        output=None,
+        output=output,
         report=report,
     )
 

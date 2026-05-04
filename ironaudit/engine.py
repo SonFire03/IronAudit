@@ -3,7 +3,18 @@ from __future__ import annotations
 from collections.abc import Callable
 from time import perf_counter
 
-from ironaudit.checks import auth, firewall, permissions, services, ssh, updates, users
+from ironaudit.checks import (
+    auth,
+    enabled_services,
+    firewall,
+    permissions,
+    ports,
+    services,
+    ssh,
+    system,
+    updates,
+    users,
+)
 from ironaudit.models import Finding, ScanMetadata, ScanReport
 from ironaudit.profiles import apply_profile, get_profile
 from ironaudit.scoring import compute_score, score_rating
@@ -12,8 +23,11 @@ from ironaudit.utils import detect_distro, hostname
 CheckFn = Callable[[], list[Finding]]
 
 CHECK_REGISTRY: dict[str, CheckFn] = {
+    "system": system.run,
     "ssh": ssh.run,
     "firewall": firewall.run,
+    "ports": ports.run,
+    "enabled_services": enabled_services.run,
     "services": services.run,
     "users": users.run,
     "permissions": permissions.run,

@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_version_command() -> None:
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "0.2.0" in result.stdout
+    assert "0.1.0" in result.stdout
 
 
 def test_info_command() -> None:
@@ -117,6 +117,38 @@ def test_scan_sarif_output(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     result = runner.invoke(app, ["scan", "--sarif"])
     assert result.exit_code == 0
     assert '"version": "2.1.0"' in result.stdout
+
+
+def test_scan_pdf_output(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from ironaudit import cli
+    from ironaudit.models import Finding, ScanMetadata, ScanReport
+
+    def fake_run_scan(include=None, exclude=None, profile=None) -> ScanReport:  # type: ignore[no-untyped-def]
+        _ = include, exclude, profile
+        return ScanReport(
+            metadata=ScanMetadata(hostname="test-host", distro="Ubuntu", scan_profile="workstation"),
+            selected_checks=["ssh"],
+            findings=[
+                Finding(
+                    check_id="ssh",
+                    title="SSH root login disabled",
+                    severity="info",
+                    status="pass",
+                    category="ssh",
+                    evidence="PermitRootLogin no",
+                    remediation="Keep disabled",
+                    points=0,
+                )
+            ],
+            score=100,
+            rating="Hardened",
+        )
+
+    monkeypatch.setattr(cli, "run_scan", fake_run_scan)
+    output = tmp_path / "report.pdf"
+    result = runner.invoke(app, ["scan", "--pdf", "--output", str(output)])
+    assert result.exit_code == 0
+    assert output.exists()
 
 
 def test_compare_json_output(tmp_path) -> None:  # type: ignore[no-untyped-def]

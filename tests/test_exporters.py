@@ -1,6 +1,7 @@
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.json_exporter import to_json
 from ironaudit.exporters.markdown_exporter import to_markdown
+from ironaudit.exporters.pdf_exporter import write_pdf
 from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.models import Finding, ScanMetadata, ScanReport
 
@@ -42,7 +43,7 @@ def test_markdown_export_contains_sections() -> None:
 def test_html_export_contains_key_content() -> None:
     payload = to_html(_sample_report())
     assert "<!doctype html>" in payload.lower()
-    assert "IronAudit Report" in payload
+    assert "IronAudit Pro - Security Audit Report" in payload
     assert "SSH password authentication enabled" in payload
 
 
@@ -51,3 +52,10 @@ def test_sarif_export_contains_structure() -> None:
     assert '"version": "2.1.0"' in payload
     assert '"runs"' in payload
     assert '"ruleId"' in payload
+
+
+def test_pdf_export_writes_pdf_file(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    output = tmp_path / "report.pdf"
+    write_pdf(_sample_report(), output)
+    assert output.exists()
+    assert output.read_bytes().startswith(b"%PDF")

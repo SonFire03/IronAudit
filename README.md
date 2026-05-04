@@ -23,6 +23,8 @@ IronAudit runs safe read-only checks on a Linux host, maps results to severity-b
 
 ## Quickstart
 
+**Responsible usage warning:** run IronAudit only on systems you own or are explicitly authorized to assess. Do not run it on third-party or production-critical infrastructure without formal approval.
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -105,29 +107,54 @@ Why caps exist:
 - Export formats: terminal, JSON, Markdown, HTML, PDF, SARIF
 - Report comparison (`ironaudit compare`) and local history snapshots
 
+## Safety Model
+
+IronAudit is designed as a defensive, low-risk local auditor:
+
+- Local audit by default (runs on the host where it is executed)
+- Read-only checks
+- No exploit code
+- No destructive actions
+- No automatic remediation by default
+- No aggressive network scanning
+- Authorized systems only
+
+Current CLI behavior is report-oriented (`scan`, `compare`, `history`, exports) and does not apply system changes.
+
 ## What It Is / What It Is Not
 
 What it is:
 
-- Defensive host posture auditor
-- Lightweight Python CLI tool for quick, explainable assessments
+- Lightweight local Linux security posture auditor
+- Defensive Python CLI tool for quick, explainable assessments
 - Report-oriented workflow for hardening follow-up
 
 What it is not:
 
-- Not a vulnerability exploitation framework
-- Not an aggressive network scanner
-- Not a replacement for enterprise VM suites or compliance platforms
+- Not a vulnerability scanner like Nessus/OpenVAS
+- Not a replacement for Lynis
+- Not a CIS-certified compliance scanner
+- Not an exploit tool
 
-## Positioning vs Existing Tools
+## Comparison With Existing Tools
 
-IronAudit is intentionally lightweight and local-first. It complements, rather than replaces:
+IronAudit is intentionally lightweight and local-first. It complements, rather than replaces, broader ecosystems:
 
-- Lynis (broad host auditing and hardening guidance)
-- OpenSCAP (compliance and policy content ecosystem)
-- Nessus/OpenVAS (network vulnerability management)
+- Lynis:
+- Lynis provides broad host hardening audits with mature, extensive test coverage. IronAudit is narrower and focuses on readable findings, straightforward remediation notes, and report export workflows.
+- CIS Benchmarks:
+- CIS Benchmarks provide prescriptive hardening guidance and control baselines. IronAudit can help operationalize posture checks, but it is not a CIS-certified compliance engine.
+- OpenSCAP:
+- OpenSCAP focuses on compliance/content-driven policy evaluation (for example SCAP content and benchmark automation). IronAudit prioritizes beginner-friendly output, practical report generation, and simple Python extensibility.
 
-Use IronAudit when you need fast, Python-based, report-friendly Linux posture checks with transparent scoring logic.
+Use IronAudit when you need fast Linux posture snapshots with transparent scoring logic, readable output, report generation, and an easy extension path for custom checks.
+
+## Limitations
+
+- Not compliance-certified (including CIS certification)
+- Not exhaustive across all Linux security controls
+- Findings require human review and context-specific validation
+- Should not be run on systems without explicit authorization
 
 ## Roadmap
 

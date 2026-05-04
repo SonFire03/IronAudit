@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3 - 2026-05-05
+
+- Improved README safety documentation with an explicit Safety Model section
+- Added clearer comparison with existing tools (Lynis, CIS Benchmarks, OpenSCAP)
+- Expanded limitations documentation (scope, non-certification, human review, authorization requirement)
+- Added responsible-usage warning near Quickstart
+- Refined project positioning for transparent, defensive public feedback preparation
+
 ## 0.2.2 - 2026-05-04
 
 - Reworked README for faster project understanding and clearer defensive positioning

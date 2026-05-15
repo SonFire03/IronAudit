@@ -25,9 +25,12 @@ pip install -e .[dev]
 ironaudit info
 ironaudit version
 ironaudit scan
+ironaudit scan --summary
 ironaudit scan --json --output report.json
 ironaudit scan --md --output report.md
 ironaudit scan --html --output report.html
+ironaudit scan --pdf --output report.pdf
+ironaudit scan --sarif --output report.sarif
 ironaudit web
 ```
 

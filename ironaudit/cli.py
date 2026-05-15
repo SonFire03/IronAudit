@@ -49,6 +49,8 @@ def _render_terminal(
     report_sarif: bool,
     output: Path | None,
     report: ScanReport,
+    summary_only: bool,
+    quiet: bool,
 ) -> None:
     if report_json:
         payload = to_json(report)
@@ -78,23 +80,24 @@ def _render_terminal(
             console.print(payload)
         return
 
-    table = Table(title="IronAudit Findings", box=box.SIMPLE_HEAVY)
-    table.add_column("Check")
-    table.add_column("Status")
-    table.add_column("Severity")
-    table.add_column("Title")
-    table.add_column("Points", justify="right")
+    if not summary_only:
+        table = Table(title="IronAudit Findings", box=box.SIMPLE_HEAVY)
+        table.add_column("Check")
+        table.add_column("Status")
+        table.add_column("Severity")
+        table.add_column("Title")
+        table.add_column("Points", justify="right")
 
-    for finding in report.findings:
-        table.add_row(
-            finding.check_id,
-            finding.status,
-            finding.severity,
-            finding.title,
-            str(finding.points),
-        )
+        for finding in report.findings:
+            table.add_row(
+                finding.check_id,
+                finding.status,
+                finding.severity,
+                finding.title,
+                str(finding.points),
+            )
 
-    console.print(table)
+        console.print(table)
     console.print(f"Score: {report.score}/100 ({report.rating})")
     if report.scoring is not None:
         sev_order = ["critical", "high", "medium", "low", "info"]
@@ -112,9 +115,42 @@ def _render_terminal(
             + "; ".join(summary)
         )
 
+    if not quiet:
+        fixes = _top_remediations(report, limit=5)
+        if fixes:
+            console.print("Top remediations:")
+            for item in fixes:
+                console.print(f"- {item}")
+
     if output:
         output.write_text(to_json(report), encoding="utf-8")
         console.print(f"JSON report written to {output}")
+
+
+def _top_remediations(report: ScanReport, limit: int = 5) -> list[str]:
+    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+    status_rank = {"fail": 0, "warn": 1, "pass": 2, "info": 3, "unsupported": 4}
+    risky = [f for f in report.findings if f.status in {"fail", "warn"}]
+    ordered = sorted(
+        risky,
+        key=lambda finding: (
+            status_rank.get(finding.status, 99),
+            severity_rank.get(finding.severity, 99),
+            -finding.points,
+            finding.check_id,
+        ),
+    )
+    unique: list[str] = []
+    seen: set[str] = set()
+    for finding in ordered:
+        text = finding.remediation.strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        unique.append(text)
+        if len(unique) >= limit:
+            break
+    return unique
 
 
 @app.command()
@@ -134,6 +170,10 @@ def scan(
     ] = "workstation",
     checks: Annotated[str | None, typer.Option("--checks", help="Comma-separated checks to include")] = None,
     exclude: Annotated[str | None, typer.Option("--exclude", help="Comma-separated checks to exclude")] = None,
+    summary: Annotated[bool, typer.Option("--summary", help="Show score breakdown only")] = False,
+    quiet: Annotated[
+        bool, typer.Option("--quiet", help="Hide remediation hints in default terminal output")
+    ] = False,
 ) -> None:
     """Run local Linux hardening audit checks."""
     output_modes = [json_output, md_output, html_output, pdf_output, sarif_output]
@@ -162,6 +202,8 @@ def scan(
         report_sarif=sarif_output,
         output=output,
         report=report,
+        summary_only=summary,
+        quiet=quiet,
     )
 
 
@@ -318,6 +360,8 @@ def history_show(
         report_sarif=sarif_output,
         output=output,
         report=report,
+        summary_only=False,
+        quiet=False,
     )
 
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ironaudit"
-version = "0.2.1"
+version = "0.2.4"
 description = "IronAudit Pro: professional local Linux security audit tool with client-ready reports."
 readme = "README.md"
 requires-python = ">=3.11"

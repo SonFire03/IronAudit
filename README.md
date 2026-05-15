@@ -1,5 +1,10 @@
 # IronAudit
 
+[![CI](https://github.com/SonFire03/IronAudit/actions/workflows/ci.yml/badge.svg)](https://github.com/SonFire03/IronAudit/actions/workflows/ci.yml)
+[![Privacy Guard](https://github.com/SonFire03/IronAudit/actions/workflows/privacy-guard.yml/badge.svg)](https://github.com/SonFire03/IronAudit/actions/workflows/privacy-guard.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 Lightweight local Linux security posture auditor focused on clear findings and report-ready output.
 
 IronAudit runs safe read-only checks on a Linux host, maps results to severity-based findings, computes a capped risk score (`0..100`), and exports reports for remediation tracking.
@@ -13,7 +18,7 @@ IronAudit runs safe read-only checks on a Linux host, maps results to severity-b
 
 ## Quick Screenshots
 
-> TODO: Replace placeholders in `docs/screenshots/` with real captures from your environment.
+Screenshots below are generated from local sample runs.
 
 ![Terminal scan](docs/screenshots/terminal-scan.png)
 ![HTML report](docs/screenshots/html-report.png)
@@ -45,6 +50,9 @@ critical 0/80 (raw 0); high 30/30 (raw 54); medium 18/18 (raw 26); low 0/8 (raw 
 ```bash
 # Terminal table output
 ironaudit scan
+
+# Summary-only terminal output (better for CI logs)
+ironaudit scan --summary
 
 # JSON report
 ironaudit scan --json --output report.json
@@ -105,6 +113,7 @@ Why caps exist:
 - Profile-aware scanning (`workstation`, `server`, `minimal`)
 - Capped severity-based scoring with detailed breakdown
 - Export formats: terminal, JSON, Markdown, HTML, PDF, SARIF
+- Summary mode for short terminal output (`ironaudit scan --summary`)
 - Report comparison (`ironaudit compare`) and local history snapshots
 
 ## Safety Model
@@ -140,12 +149,9 @@ What it is not:
 
 IronAudit is intentionally lightweight and local-first. It complements, rather than replaces, broader ecosystems:
 
-- Lynis:
-- Lynis provides broad host hardening audits with mature, extensive test coverage. IronAudit is narrower and focuses on readable findings, straightforward remediation notes, and report export workflows.
-- CIS Benchmarks:
-- CIS Benchmarks provide prescriptive hardening guidance and control baselines. IronAudit can help operationalize posture checks, but it is not a CIS-certified compliance engine.
-- OpenSCAP:
-- OpenSCAP focuses on compliance/content-driven policy evaluation (for example SCAP content and benchmark automation). IronAudit prioritizes beginner-friendly output, practical report generation, and simple Python extensibility.
+- Lynis: broad host hardening audits with mature, extensive test coverage. IronAudit is narrower and focuses on readable findings, remediation notes, and report export workflows.
+- CIS Benchmarks: prescriptive hardening guidance and control baselines. IronAudit can help operationalize posture checks, but it is not a CIS-certified compliance engine.
+- OpenSCAP: compliance/content-driven policy evaluation (for example SCAP content and benchmark automation). IronAudit prioritizes explainable output, practical report generation, and Python extensibility.
 
 Use IronAudit when you need fast Linux posture snapshots with transparent scoring logic, readable output, report generation, and an easy extension path for custom checks.
 

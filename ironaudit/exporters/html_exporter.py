@@ -154,7 +154,18 @@ def _severity_section(level: str, findings: list[Finding]) -> str:
 
 
 def _top_fixes(report: ScanReport) -> str:
+    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+    status_rank = {"fail": 0, "warn": 1, "pass": 2, "info": 3, "unsupported": 4}
     risky = [f for f in report.findings if f.status in {"fail", "warn"}]
+    risky = sorted(
+        risky,
+        key=lambda finding: (
+            status_rank.get(finding.status, 99),
+            severity_rank.get(finding.severity, 99),
+            -finding.points,
+            finding.check_id,
+        ),
+    )
     if not risky:
         return "<li>No immediate remediation required based on current findings.</li>"
 

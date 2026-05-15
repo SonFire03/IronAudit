@@ -36,6 +36,7 @@ def test_json_export_contains_score() -> None:
 def test_markdown_export_contains_sections() -> None:
     payload = to_markdown(_sample_report())
     assert "# IronAudit Report" in payload
+    assert "## Top Remediations" in payload
     assert "## Findings" in payload
     assert "SSH password authentication enabled" in payload
 

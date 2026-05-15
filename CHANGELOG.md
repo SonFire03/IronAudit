@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.4 - 2026-05-16
+
+- Added `ironaudit scan --summary` for concise terminal output in CI and automation logs
+- Added `ironaudit scan --quiet` to suppress remediation hints in default terminal output
+- Improved remediation prioritization in terminal, Markdown, and HTML outputs
+- Synced project version metadata (`pyproject.toml`, package `__version__`) with release history
+- Improved README quality: badges, CLI summary example, comparison section cleanup
+- Updated French documentation with PDF/SARIF export examples and summary mode
+
 ## 0.2.3 - 2026-05-05
 
 - Improved README safety documentation with an explicit Safety Model section

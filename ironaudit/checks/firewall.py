@@ -9,7 +9,11 @@ CHECK_ID = "firewall"
 def run() -> list[Finding]:
     ufw = _check_ufw()
     if ufw is not None:
-        return [ufw]
+        findings = [ufw]
+        default_policy = _check_ufw_default_policy()
+        if default_policy is not None:
+            findings.append(default_policy)
+        return findings
 
     nft = _check_nftables()
     if nft is not None:
@@ -57,6 +61,39 @@ def _check_ufw() -> Finding | None:
         evidence=result.stdout or result.stderr or "ufw inactive",
         remediation="Enable UFW with a deny-by-default inbound policy.",
         points=20,
+    )
+
+
+def _check_ufw_default_policy() -> Finding | None:
+    result = run_command(["ufw", "status", "verbose"])
+    if result.returncode != 0:
+        return None
+
+    lower = result.stdout.lower()
+    if "default:" not in lower:
+        return None
+
+    if "deny (incoming)" in lower and "allow (outgoing)" in lower:
+        return Finding(
+            check_id=CHECK_ID,
+            title="UFW default inbound policy is restrictive",
+            severity="info",
+            status="pass",
+            category="firewall",
+            evidence=result.stdout.strip(),
+            remediation="Keep default deny inbound and review explicit allow rules.",
+            points=0,
+        )
+
+    return Finding(
+        check_id=CHECK_ID,
+        title="UFW default inbound policy is permissive",
+        severity="medium",
+        status="warn",
+        category="firewall",
+        evidence=result.stdout.strip(),
+        remediation="Set UFW default incoming policy to deny and allow only required services.",
+        points=8,
     )
 
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ironaudit.models import Finding, ScanReport
+from ironaudit.reporting import severity_counter, top_remediations
 
 
 @dataclass(slots=True)
@@ -14,6 +15,9 @@ class ComparisonResult:
     score_delta: int
     new_risks: list[Finding]
     resolved_risks: list[Finding]
+    new_risks_by_severity: dict[str, int]
+    resolved_risks_by_severity: dict[str, int]
+    top_new_remediations: list[str]
 
 
 def load_report(path: Path) -> ScanReport:
@@ -32,6 +36,8 @@ def compare_reports(before: ScanReport, after: ScanReport) -> ComparisonResult:
 
     new_risks = [after_risks[key] for key in sorted(new_keys)]
     resolved_risks = [before_risks[key] for key in sorted(resolved_keys)]
+    new_risk_counts = dict(severity_counter(new_risks))
+    resolved_risk_counts = dict(severity_counter(resolved_risks))
 
     return ComparisonResult(
         before_score=before.score,
@@ -39,6 +45,9 @@ def compare_reports(before: ScanReport, after: ScanReport) -> ComparisonResult:
         score_delta=after.score - before.score,
         new_risks=new_risks,
         resolved_risks=resolved_risks,
+        new_risks_by_severity=new_risk_counts,
+        resolved_risks_by_severity=resolved_risk_counts,
+        top_new_remediations=top_remediations(new_risks, limit=5),
     )
 
 

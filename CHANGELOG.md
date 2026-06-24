@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.5 - 2026-06-24
+
+- Added stronger SSH findings for empty passwords, X11 forwarding, key auth, and retry budgets
+- Added firewall default-policy checks and account password-hash checks
+- Added `ironaudit scan --output-dir` for bundle exports in JSON/Markdown/HTML/SARIF/PDF
+- Improved comparison output with severity counts and top remediation highlights
+- Added top remediations to the web dashboard and reused shared prioritization helpers
+- Added GitHub release automation workflow for tag-based releases
+
 ## 0.2.4 - 2026-05-16
 
 - Added `ironaudit scan --summary` for concise terminal output in CI and automation logs

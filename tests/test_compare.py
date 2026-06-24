@@ -51,3 +51,6 @@ def test_compare_reports_new_and_resolved_risks() -> None:
     assert result.new_risks[0].check_id == "firewall"
     assert len(result.resolved_risks) == 1
     assert result.resolved_risks[0].check_id == "ssh"
+    assert result.new_risks_by_severity["high"] == 1
+    assert result.resolved_risks_by_severity["high"] == 1
+    assert result.top_new_remediations == ["y"]

@@ -14,7 +14,7 @@ runner = CliRunner()
 def test_version_command() -> None:
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "0.2.4" in result.stdout
+    assert "0.2.5" in result.stdout
 
 
 def test_info_command() -> None:
@@ -198,6 +198,7 @@ def test_compare_json_output(tmp_path) -> None:  # type: ignore[no-untyped-def]
     assert result.exit_code == 0
     assert '"score_delta": -5' in result.stdout
     assert '"new_risks_count": 1' in result.stdout
+    assert '"top_new_remediations": [' in result.stdout
 
 
 def test_history_list_empty(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
@@ -268,3 +269,40 @@ def test_scan_quiet_hides_remediations(monkeypatch) -> None:  # type: ignore[no-
     result = runner.invoke(app, ["scan", "--summary", "--quiet"])
     assert result.exit_code == 0
     assert "Top remediations:" not in result.stdout
+
+
+def test_scan_output_dir_bundle(monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from ironaudit import cli
+    from ironaudit.models import Finding, ScanMetadata, ScanReport
+
+    def fake_run_scan(include=None, exclude=None, profile=None) -> ScanReport:  # type: ignore[no-untyped-def]
+        _ = include, exclude, profile
+        return ScanReport(
+            metadata=ScanMetadata(hostname="test-host", distro="Ubuntu"),
+            selected_checks=["ssh"],
+            findings=[
+                Finding(
+                    check_id="ssh",
+                    title="SSH password authentication enabled",
+                    severity="high",
+                    status="fail",
+                    category="ssh",
+                    evidence="PasswordAuthentication yes",
+                    remediation="Disable password authentication.",
+                    points=15,
+                )
+            ],
+            score=85,
+            rating="Weak",
+        )
+
+    monkeypatch.setattr(cli, "run_scan", fake_run_scan)
+    output_dir = tmp_path / "bundle"
+    result = runner.invoke(app, ["scan", "--output-dir", str(output_dir)])
+    assert result.exit_code == 0
+    assert output_dir.exists()
+    assert list(output_dir.glob("*.json"))
+    assert list(output_dir.glob("*.md"))
+    assert list(output_dir.glob("*.html"))
+    assert list(output_dir.glob("*.sarif"))
+    assert list(output_dir.glob("*.pdf"))

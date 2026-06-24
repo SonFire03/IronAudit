@@ -35,6 +35,8 @@ ironaudit history compare-latest
 ironaudit history compare-latest --json
 ```
 
+The latest comparison includes severity-level risk counts and the top remediation items from newly introduced findings.
+
 ## Storage
 
 - Default folder: `.ironaudit-history/`

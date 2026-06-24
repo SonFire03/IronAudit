@@ -26,6 +26,7 @@ ironaudit info
 ironaudit version
 ironaudit scan
 ironaudit scan --summary
+ironaudit scan --output-dir reports/
 ironaudit scan --json --output report.json
 ironaudit scan --md --output report.md
 ironaudit scan --html --output report.html

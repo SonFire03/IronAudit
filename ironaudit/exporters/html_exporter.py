@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import html
-from collections import Counter
 
 from ironaudit.models import Finding, ScanReport
-
-SEVERITY_ORDER = ["critical", "high", "medium", "low", "info"]
+from ironaudit.reporting import (
+    SEVERITY_ORDER,
+    severity_counter,
+    status_counter,
+    top_remediations,
+)
 
 
 def to_html(report: ScanReport) -> str:
@@ -14,8 +17,8 @@ def to_html(report: ScanReport) -> str:
         if report.metadata.duration_seconds is not None
         else "n/a"
     )
-    status_counts = Counter(f.status for f in report.findings)
-    severity_counts = Counter(f.severity for f in report.findings)
+    status_counts = status_counter(report.findings)
+    severity_counts = severity_counter(report.findings)
 
     grouped: dict[str, list[Finding]] = {level: [] for level in SEVERITY_ORDER}
     for finding in report.findings:
@@ -154,31 +157,10 @@ def _severity_section(level: str, findings: list[Finding]) -> str:
 
 
 def _top_fixes(report: ScanReport) -> str:
-    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-    status_rank = {"fail": 0, "warn": 1, "pass": 2, "info": 3, "unsupported": 4}
-    risky = [f for f in report.findings if f.status in {"fail", "warn"}]
-    risky = sorted(
-        risky,
-        key=lambda finding: (
-            status_rank.get(finding.status, 99),
-            severity_rank.get(finding.severity, 99),
-            -finding.points,
-            finding.check_id,
-        ),
-    )
-    if not risky:
+    remediations = top_remediations(report.findings, limit=10)
+    if not remediations:
         return "<li>No immediate remediation required based on current findings.</li>"
-
-    seen: set[str] = set()
-    items: list[str] = []
-    for finding in risky:
-        if finding.remediation in seen:
-            continue
-        seen.add(finding.remediation)
-        items.append(f"<li>{html.escape(finding.remediation)}</li>")
-        if len(items) >= 10:
-            break
-    return "".join(items)
+    return "".join(f"<li>{html.escape(item)}</li>" for item in remediations)
 
 
 def _scoring_breakdown(report: ScanReport) -> str:

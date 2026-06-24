@@ -100,6 +100,8 @@ def run() -> list[Finding]:
         )
     )
 
+    findings.extend(_shadow_password_findings())
+
     return findings
 
 
@@ -150,3 +152,59 @@ def _sudo_or_wheel_members() -> list[str]:
         listed = [item.strip() for item in parts[3].split(",") if item.strip()]
         members.update(listed)
     return sorted(members)
+
+
+def _shadow_password_findings() -> list[Finding]:
+    shadow_text = safe_read_text("/etc/shadow")
+    if shadow_text is None:
+        return [
+            Finding(
+                check_id=CHECK_ID,
+                title="Unable to read /etc/shadow",
+                severity="low",
+                status="unsupported",
+                category="identity",
+                evidence="/etc/shadow unavailable",
+                remediation="Run with sufficient privileges or validate password policy manually.",
+                points=0,
+            )
+        ]
+
+    blank_password_accounts: list[str] = []
+    for line in shadow_text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(":")
+        if len(parts) < 2:
+            continue
+        user, password_field = parts[0], parts[1]
+        if password_field == "":
+            blank_password_accounts.append(user)
+
+    if blank_password_accounts:
+        sample = ", ".join(blank_password_accounts[:5])
+        return [
+            Finding(
+                check_id=CHECK_ID,
+                title="Accounts with blank password hashes detected",
+                severity="critical",
+                status="fail",
+                category="identity",
+                evidence=f"Users with blank password field: {sample}",
+                remediation="Disable or remove any account with a blank password field.",
+                points=25,
+            )
+        ]
+
+    return [
+        Finding(
+            check_id=CHECK_ID,
+            title="No blank password hashes detected",
+            severity="info",
+            status="pass",
+            category="identity",
+            evidence="No empty password fields found in /etc/shadow",
+            remediation="Keep password fields protected and rotate credentials regularly.",
+            points=0,
+        )
+    ]

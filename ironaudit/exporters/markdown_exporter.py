@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from collections import Counter
-
 from ironaudit.models import ScanReport
+from ironaudit.reporting import status_counter, top_remediations
 
 
 def to_markdown(report: ScanReport) -> str:
-    counts = Counter(f.status for f in report.findings)
+    counts = status_counter(report.findings)
 
     lines: list[str] = []
     lines.append("# IronAudit Report")
@@ -29,7 +28,7 @@ def to_markdown(report: ScanReport) -> str:
     lines.append("")
     lines.append("## Top Remediations")
     lines.append("")
-    for remediation in _top_remediations(report, limit=10):
+    for remediation in top_remediations(report.findings, limit=10):
         lines.append(f"- {remediation}")
     lines.append("")
     lines.append("## Findings")
@@ -49,32 +48,3 @@ def to_markdown(report: ScanReport) -> str:
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
-
-
-def _top_remediations(report: ScanReport, limit: int) -> list[str]:
-    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-    status_rank = {"fail": 0, "warn": 1, "pass": 2, "info": 3, "unsupported": 4}
-    risky = [f for f in report.findings if f.status in {"fail", "warn"}]
-    risky = sorted(
-        risky,
-        key=lambda finding: (
-            status_rank.get(finding.status, 99),
-            severity_rank.get(finding.severity, 99),
-            -finding.points,
-            finding.check_id,
-        ),
-    )
-
-    seen: set[str] = set()
-    output: list[str] = []
-    for finding in risky:
-        text = finding.remediation.strip()
-        if not text or text in seen:
-            continue
-        seen.add(text)
-        output.append(text)
-        if len(output) >= limit:
-            break
-    if output:
-        return output
-    return ["No immediate remediation required based on current findings."]

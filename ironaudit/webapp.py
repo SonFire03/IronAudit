@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import json
-from collections import Counter
 from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +13,7 @@ from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.markdown_exporter import to_markdown
 from ironaudit.exporters.sarif_exporter import to_sarif
 from ironaudit.models import ScanReport
+from ironaudit.reporting import severity_counter, status_counter, top_remediations
 
 
 @dataclass(slots=True)
@@ -552,8 +552,8 @@ def render_home(report: ScanReport | None, include: str = "", exclude: str = "")
 
 
 def render_report(report: ScanReport) -> str:
-    counts = Counter(f.status for f in report.findings)
-    severity_counts = Counter(f.severity for f in report.findings)
+    counts = status_counter(report.findings)
+    severity_counts = severity_counter(report.findings)
     rating_css = f"score-{report.rating.lower()}"
     rows: list[str] = []
     for finding in report.findings:
@@ -580,6 +580,9 @@ def render_report(report: ScanReport) -> str:
             f"<td class='mono'>{html.escape(finding.category)}</td>"
             "</tr>"
         )
+
+    remediation_items = top_remediations(report.findings, limit=6)
+    remediation_block = "".join(f"<li>{html.escape(item)}</li>" for item in remediation_items) if remediation_items else "<li>No immediate remediation required.</li>"
 
     return f"""
       <div class='score-layout'>
@@ -623,6 +626,10 @@ def render_report(report: ScanReport) -> str:
         <div class='kpi'><div class='kpi-label'>Info</div><div class='kpi-value status-info'>{counts.get('info', 0)}</div></div>
         <div class='kpi'><div class='kpi-label'>Unsupported</div><div class='kpi-value status-unsupported'>{counts.get('unsupported', 0)}</div></div>
         <div class='kpi'><div class='kpi-label'>Total Points</div><div class='kpi-value'>{sum(f.points for f in report.findings)}</div></div>
+      </div>
+      <div style='margin-top:14px;'>
+        <h3 style='margin:0 0 8px;'>Top Remediations</h3>
+        <ul style='margin:0; padding-left:18px;'>{remediation_block}</ul>
       </div>
       <div class='table-stats'>Showing <strong id='table-visible-count'>{len(report.findings)}</strong> / {len(report.findings)} findings</div>
       <div class='table-wrap'>

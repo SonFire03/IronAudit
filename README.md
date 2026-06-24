@@ -54,6 +54,9 @@ ironaudit scan
 # Summary-only terminal output (better for CI logs)
 ironaudit scan --summary
 
+# Export a full report bundle to a directory
+ironaudit scan --output-dir reports/
+
 # JSON report
 ironaudit scan --json --output report.json
 
@@ -113,6 +116,7 @@ Why caps exist:
 - Profile-aware scanning (`workstation`, `server`, `minimal`)
 - Capped severity-based scoring with detailed breakdown
 - Export formats: terminal, JSON, Markdown, HTML, PDF, SARIF
+- Bundle export to a directory (`ironaudit scan --output-dir`)
 - Summary mode for short terminal output (`ironaudit scan --summary`)
 - Report comparison (`ironaudit compare`) and local history snapshots
 

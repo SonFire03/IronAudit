@@ -84,6 +84,66 @@ def run() -> list[Finding]:
             )
         )
 
+    pubkey_auth = directives.get("pubkeyauthentication", "yes").lower()
+    if pubkey_auth != "yes":
+        findings.append(
+            Finding(
+                check_id=CHECK_ID,
+                title="SSH public key authentication not explicitly enabled",
+                severity="medium",
+                status="warn",
+                category="ssh",
+                evidence=f"PubkeyAuthentication {pubkey_auth}",
+                remediation="Explicitly enable `PubkeyAuthentication yes` for key-based access.",
+                points=6,
+            )
+        )
+
+    permit_empty = directives.get("permitemptypasswords", "no").lower()
+    if permit_empty == "yes":
+        findings.append(
+            Finding(
+                check_id=CHECK_ID,
+                title="SSH empty passwords are allowed",
+                severity="critical",
+                status="fail",
+                category="ssh",
+                evidence=f"PermitEmptyPasswords {permit_empty}",
+                remediation="Set `PermitEmptyPasswords no` immediately.",
+                points=25,
+            )
+        )
+
+    x11_forwarding = directives.get("x11forwarding", "yes").lower()
+    if x11_forwarding == "yes":
+        findings.append(
+            Finding(
+                check_id=CHECK_ID,
+                title="SSH X11 forwarding is enabled",
+                severity="medium",
+                status="warn",
+                category="ssh",
+                evidence=f"X11Forwarding {x11_forwarding}",
+                remediation="Disable `X11Forwarding` unless it is required for a trusted admin workflow.",
+                points=5,
+            )
+        )
+
+    max_auth_tries = directives.get("maxauthtries", "6")
+    if max_auth_tries.isdigit() and int(max_auth_tries) > 4:
+        findings.append(
+            Finding(
+                check_id=CHECK_ID,
+                title="SSH authentication retry budget is high",
+                severity="low",
+                status="warn",
+                category="ssh",
+                evidence=f"MaxAuthTries {max_auth_tries}",
+                remediation="Reduce `MaxAuthTries` to 4 or fewer.",
+                points=3,
+            )
+        )
+
     socket_findings = _ssh_socket_finding(directives)
     findings.extend(socket_findings)
     return findings

@@ -41,5 +41,6 @@ def test_render_home_with_report() -> None:
     html = render_home(_report(), include="ssh", exclude="updates")
     assert "Score: 85/100 (Acceptable)" in html
     assert "SSH password authentication enabled" in html
+    assert "Top Remediations" in html
     assert "value='ssh'" in html
     assert "value='updates'" in html

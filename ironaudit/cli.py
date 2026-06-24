@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.table import Table
 
 from ironaudit import __version__
-from ironaudit.compare import compare_reports, load_report
+from ironaudit.compare import ComparisonResult, compare_reports, load_report
 from ironaudit.engine import available_checks, run_scan
 from ironaudit.exporters.html_exporter import to_html
 from ironaudit.exporters.json_exporter import to_json
@@ -27,6 +27,7 @@ from ironaudit.history import (
 )
 from ironaudit.models import ScanReport
 from ironaudit.profiles import available_profiles
+from ironaudit.reporting import top_remediations
 from ironaudit.webapp import WebConfig, serve_web
 
 app = typer.Typer(help="IronAudit - Linux security posture auditor")
@@ -48,6 +49,7 @@ def _render_terminal(
     report_pdf: bool,
     report_sarif: bool,
     output: Path | None,
+    output_dir: Path | None,
     report: ScanReport,
     summary_only: bool,
     quiet: bool,
@@ -66,16 +68,25 @@ def _render_terminal(
         payload = ""
 
     if report_pdf:
-        if output is None:
-            raise typer.BadParameter("--output is required with --pdf.")
-        write_pdf(report, output)
-        console.print(f"Report written to {output}")
-        return
+        if output is not None:
+            write_pdf(report, output)
+            console.print(f"Report written to {output}")
+            return
+        if output_dir is not None:
+            pdf_path = output_dir / f"{_export_stem(report)}.pdf"
+            write_pdf(report, pdf_path)
+            console.print(f"Report written to {pdf_path}")
+            return
+        raise typer.BadParameter("--output or --output-dir is required with --pdf.")
 
     if report_json or report_md or report_html or report_sarif:
         if output:
             output.write_text(payload, encoding="utf-8")
             console.print(f"Report written to {output}")
+        elif output_dir:
+            export_path = output_dir / f"{_export_stem(report)}.{_export_extension(report_json, report_md, report_html, report_sarif)}"
+            export_path.write_text(payload, encoding="utf-8")
+            console.print(f"Report written to {export_path}")
         else:
             console.print(payload)
         return
@@ -116,7 +127,7 @@ def _render_terminal(
         )
 
     if not quiet:
-        fixes = _top_remediations(report, limit=5)
+        fixes = top_remediations(report.findings, limit=5)
         if fixes:
             console.print("Top remediations:")
             for item in fixes:
@@ -127,30 +138,58 @@ def _render_terminal(
         console.print(f"JSON report written to {output}")
 
 
-def _top_remediations(report: ScanReport, limit: int = 5) -> list[str]:
-    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-    status_rank = {"fail": 0, "warn": 1, "pass": 2, "info": 3, "unsupported": 4}
-    risky = [f for f in report.findings if f.status in {"fail", "warn"}]
-    ordered = sorted(
-        risky,
-        key=lambda finding: (
-            status_rank.get(finding.status, 99),
-            severity_rank.get(finding.severity, 99),
-            -finding.points,
-            finding.check_id,
-        ),
-    )
-    unique: list[str] = []
-    seen: set[str] = set()
-    for finding in ordered:
-        text = finding.remediation.strip()
-        if not text or text in seen:
-            continue
-        seen.add(text)
-        unique.append(text)
-        if len(unique) >= limit:
-            break
-    return unique
+def _export_stem(report: ScanReport) -> str:
+    raw = f"{report.metadata.hostname}-{report.metadata.scanned_at}"
+    cleaned = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in raw.lower())
+    while "--" in cleaned:
+        cleaned = cleaned.replace("--", "-")
+    return cleaned.strip("-") or "ironaudit-report"
+
+
+def _export_extension(report_json: bool, report_md: bool, report_html: bool, report_sarif: bool) -> str:
+    if report_json:
+        return "json"
+    if report_md:
+        return "md"
+    if report_html:
+        return "html"
+    if report_sarif:
+        return "sarif"
+    return "json"
+
+
+def _write_bundle(report: ScanReport, output_dir: Path) -> list[Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stem = _export_stem(report)
+    files = [
+        (output_dir / f"{stem}.json", to_json(report)),
+        (output_dir / f"{stem}.md", to_markdown(report)),
+        (output_dir / f"{stem}.html", to_html(report)),
+        (output_dir / f"{stem}.sarif", to_sarif(report)),
+    ]
+    written: list[Path] = []
+    for path, payload in files:
+        path.write_text(payload, encoding="utf-8")
+        written.append(path)
+    pdf_path = output_dir / f"{stem}.pdf"
+    write_pdf(report, pdf_path)
+    written.append(pdf_path)
+    return written
+
+
+def _comparison_payload(result: ComparisonResult) -> dict[str, object]:
+    return {
+        "before_score": result.before_score,
+        "after_score": result.after_score,
+        "score_delta": result.score_delta,
+        "new_risks_count": len(result.new_risks),
+        "resolved_risks_count": len(result.resolved_risks),
+        "new_risks_by_severity": result.new_risks_by_severity,
+        "resolved_risks_by_severity": result.resolved_risks_by_severity,
+        "top_new_remediations": result.top_new_remediations,
+        "new_risks": [item.to_dict() for item in result.new_risks],
+        "resolved_risks": [item.to_dict() for item in result.resolved_risks],
+    }
 
 
 @app.command()
@@ -161,6 +200,7 @@ def scan(
     pdf_output: Annotated[bool, typer.Option("--pdf", help="Export report as PDF")] = False,
     sarif_output: Annotated[bool, typer.Option("--sarif", help="Print/export report as SARIF")] = False,
     output: Annotated[Path | None, typer.Option("--output", help="Output file path")] = None,
+    output_dir: Annotated[Path | None, typer.Option("--output-dir", help="Write report bundle to a directory")] = None,
     save_history: Annotated[
         bool, typer.Option("--save-history/--no-save-history", help="Store snapshot in local history")
     ] = False,
@@ -179,6 +219,8 @@ def scan(
     output_modes = [json_output, md_output, html_output, pdf_output, sarif_output]
     if sum(1 for mode in output_modes if mode) > 1:
         raise typer.BadParameter("Use only one output mode among --json, --md, --html, --pdf, --sarif.")
+    if output is not None and output_dir is not None:
+        raise typer.BadParameter("Use either --output or --output-dir, not both.")
 
     if profile not in available_profiles():
         raise typer.BadParameter(
@@ -194,6 +236,18 @@ def scan(
         path = save_snapshot(report, label=label)
         console.print(f"Snapshot saved: {path}")
 
+    if output_dir is not None and not any(output_modes):
+        written = _write_bundle(report, output_dir)
+        console.print(f"Report bundle written to {output_dir} ({len(written)} files)")
+        console.print(f"Score: {report.score}/100 ({report.rating})")
+        if not quiet:
+            fixes = top_remediations(report.findings, limit=5)
+            if fixes:
+                console.print("Top remediations:")
+                for item in fixes:
+                    console.print(f"- {item}")
+        return
+
     _render_terminal(
         report_json=json_output,
         report_md=md_output,
@@ -201,6 +255,7 @@ def scan(
         report_pdf=pdf_output,
         report_sarif=sarif_output,
         output=output,
+        output_dir=output_dir,
         report=report,
         summary_only=summary,
         quiet=quiet,
@@ -256,15 +311,7 @@ def compare(
     after = load_report(current)
     result = compare_reports(before, after)
 
-    payload = {
-        "before_score": result.before_score,
-        "after_score": result.after_score,
-        "score_delta": result.score_delta,
-        "new_risks_count": len(result.new_risks),
-        "resolved_risks_count": len(result.resolved_risks),
-        "new_risks": [item.to_dict() for item in result.new_risks],
-        "resolved_risks": [item.to_dict() for item in result.resolved_risks],
-    }
+    payload = _comparison_payload(result)
 
     if json_output:
         data = json.dumps(payload, indent=2)
@@ -283,12 +330,18 @@ def compare(
     table.add_row("Score delta", f"{result.score_delta:+d}")
     table.add_row("New risks", str(len(result.new_risks)))
     table.add_row("Resolved risks", str(len(result.resolved_risks)))
+    table.add_row("New critical/high", _risk_count(result.new_risks_by_severity))
+    table.add_row("Resolved critical/high", _risk_count(result.resolved_risks_by_severity))
     console.print(table)
 
     if result.new_risks:
         console.print("[bold red]New risks:[/bold red]")
         for finding in result.new_risks[:10]:
             console.print(f"- [{finding.check_id}] {finding.title} ({finding.severity}/{finding.status})")
+    if result.top_new_remediations:
+        console.print("Top new remediations:")
+        for item in result.top_new_remediations:
+            console.print(f"- {item}")
 
     if result.resolved_risks:
         console.print("[bold green]Resolved risks:[/bold green]")
@@ -359,6 +412,7 @@ def history_show(
         report_pdf=pdf_output,
         report_sarif=sarif_output,
         output=output,
+        output_dir=None,
         report=report,
         summary_only=False,
         quiet=False,
@@ -406,15 +460,7 @@ def history_compare_latest(
 
     before, after = pair
     result = compare_reports(before, after)
-    payload = {
-        "before_score": result.before_score,
-        "after_score": result.after_score,
-        "score_delta": result.score_delta,
-        "new_risks_count": len(result.new_risks),
-        "resolved_risks_count": len(result.resolved_risks),
-        "new_risks": [item.to_dict() for item in result.new_risks],
-        "resolved_risks": [item.to_dict() for item in result.resolved_risks],
-    }
+    payload = _comparison_payload(result)
 
     if json_output:
         console.print(json.dumps(payload, indent=2))
@@ -428,7 +474,19 @@ def history_compare_latest(
     table.add_row("Score delta", f"{result.score_delta:+d}")
     table.add_row("New risks", str(len(result.new_risks)))
     table.add_row("Resolved risks", str(len(result.resolved_risks)))
+    table.add_row("New critical/high", _risk_count(result.new_risks_by_severity))
+    table.add_row("Resolved critical/high", _risk_count(result.resolved_risks_by_severity))
     console.print(table)
+
+    if result.top_new_remediations:
+        console.print("Top new remediations:")
+        for item in result.top_new_remediations:
+            console.print(f"- {item}")
+
+
+def _risk_count(counts: dict[str, int]) -> str:
+    total = counts.get("critical", 0) + counts.get("high", 0)
+    return str(total)
 
 if __name__ == "__main__":
     app()

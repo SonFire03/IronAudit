@@ -18,7 +18,7 @@ IronAudit runs safe read-only checks on a Linux host, maps results to severity-b
 
 ## Quick Screenshots
 
-Screenshots below are generated from local sample runs.
+Screenshots below are illustrative UI mockups derived from `docs/samples/sample-report.*` (same host, score, and finding counts as the sample).
 
 ![Terminal scan](docs/screenshots/terminal-scan.png)
 ![HTML report](docs/screenshots/html-report.png)

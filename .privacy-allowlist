@@ -1,2 +1,4 @@
 # Exact values to ignore in privacy_guard.py (one entry per line).
 # Keep this file minimal and documented.
+# Synthetic /etc/passwd fixture in tests/test_checks_users.py (fake user, not real data).
+/home/user1
